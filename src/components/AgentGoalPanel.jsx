@@ -200,10 +200,12 @@ export default function AgentGoalPanel() {
       await new Promise(r => setTimeout(r, 600));
 
       if (prod.price <= policy.requireApprovalAbove) {
-        addLog(`[PASS] Price ${prod.price} Ⓝ ≤ Auto-approval cap ${policy.requireApprovalAbove} Ⓝ. Purchasing autonomously (no wallet pop-up)...`, 'success');
-        requestAgentPurchase(prod);
+        addLog(`[PASS] Price ${prod.price} Ⓝ ≤ Auto-approval cap ${policy.requireApprovalAbove} Ⓝ. Broadcasting on-chain via Agent Vault (zero wallet pop-up)...`, 'success');
+        const res = await requestAgentPurchase(prod);
         acquiredDeliverables.push(prod);
-        await new Promise(r => setTimeout(r, 800));
+        if (res && res.txHash && !res.txHash.startsWith('auton-')) {
+          addLog(`✓ Confirmed on NEAR Testnet! Tx: ${res.txHash.slice(0, 14)}...`, 'success');
+        }
         addLog(`Acquired ${prod.name} payload into agent memory context.`, 'success');
       } else {
         addLog(`[LEASH INTERCEPT] Price ${prod.price} Ⓝ > Auto-approval cap ${policy.requireApprovalAbove} Ⓝ!`, 'warning');

@@ -11,10 +11,11 @@ const TESTNET_RPC_URL = 'https://rpc.testnet.near.org';
 const FASTNEAR_RPC_URL = 'https://test.rpc.fastnear.com';
 
 export const POLICY_CONTRACT_ACCOUNT = 'policy.voiceleash.testnet';
+export const VOICELEASH_MARKET_ACCOUNT = 'voiceleash-market.testnet';
 
-// Dedicated VoiceLeash Escrow Vault Implicit Account on NEAR Testnet
-export const VOICELEASH_VAULT_ACCOUNT = 'cab3b05692794e721ece5b6af59d0347bc709c19a35180bf80b7064882e591cb';
-const VAULT_SECRET_KEY = 'ed25519:2xfzii2xWtkeMUeg8PYEJv8LqcxXpD6kB426JZJT1M2kknXjnVnu1gb2XSzMJ4DSQbR6N8dkGTJEuoWVzhAsNzhp';
+// Dedicated VoiceLeash Escrow Vault Account on NEAR Testnet (Pre-funded & Managed by Agent Key)
+export const VOICELEASH_VAULT_ACCOUNT = 'voiceleash-vault-3421.testnet';
+const VAULT_SECRET_KEY = 'ed25519:4AeEKmFskJFPRttwuxvNTq2AxXbWPLefUz5Y5bRU9HohRoRPYXHhiVxQG2WJVYmrPNVJUmYXgUbDJQqCyR79NkQz';
 
 let selectorPromise = null;
 
@@ -218,10 +219,48 @@ export async function getVaultBalance() {
 }
 
 /**
+ * Execute Autonomous Purchase On-Chain via VoiceLeash Agent Vault
+ * Signs with the Agent Vault's keypair directly in memory and broadcasts to NEAR Testnet RPC.
+ * Result: 100% REAL on-chain transaction hash on Nearblocks with ZERO wallet pop-ups!
+ */
+export async function executeAutonomousOnChainPurchase({ userAccountId, productName, priceNear }) {
+  try {
+    const keyStore = new keyStores.InMemoryKeyStore();
+    const keyPair = KeyPair.fromString(VAULT_SECRET_KEY);
+    await keyStore.setKey('testnet', VOICELEASH_VAULT_ACCOUNT, keyPair);
+
+    const near = new Near({
+      networkId: 'testnet',
+      keyStore,
+      nodeUrl: TESTNET_RPC_URL
+    });
+
+    const vaultAccount = new Account(near.connection, VOICELEASH_VAULT_ACCOUNT);
+    const yoctoDeposit = toYoctoNear(priceNear);
+
+    // Broadcast real on-chain transfer from Agent Vault to Marketplace Provider on NEAR Testnet!
+    const result = await vaultAccount.sendMoney(VOICELEASH_MARKET_ACCOUNT, yoctoDeposit);
+
+    return {
+      success: true,
+      txHash: result?.transaction?.hash,
+      signerId: VOICELEASH_VAULT_ACCOUNT,
+      receiverId: VOICELEASH_MARKET_ACCOUNT
+    };
+  } catch (err) {
+    console.error("Autonomous on-chain transaction failed:", err);
+    return {
+      success: false,
+      error: err.message || "Failed to broadcast autonomous transaction"
+    };
+  }
+}
+
+/**
  * Reclaim / Refund Testnet Funds from VoiceLeash Vault back to user account!
  * Ensures user funds are never lost permanently while testing.
  */
-export async function refundVaultFundsTo(userAccountId) {
+export async function refundVaultFundsTo(userAccountId, requestedAmount = null) {
   const keyStore = new keyStores.InMemoryKeyStore();
   const keyPair = KeyPair.fromString(VAULT_SECRET_KEY);
   await keyStore.setKey('testnet', VOICELEASH_VAULT_ACCOUNT, keyPair);
@@ -237,13 +276,20 @@ export async function refundVaultFundsTo(userAccountId) {
   try {
     const balance = await vaultAccount.getAccountBalance();
     const availableYocto = BigInt(balance.available);
-    const gasBuffer = 5000000000000000000000n; // 0.005 NEAR reserve for gas
+    const gasBuffer = 10000000000000000000000n; // 0.01 NEAR reserve for gas
 
     if (availableYocto <= gasBuffer) {
       throw new Error('No reclaimable test funds in the vault currently.');
     }
 
-    const refundYocto = (availableYocto - gasBuffer).toString();
+    let refundYocto;
+    if (requestedAmount && requestedAmount > 0) {
+      const targetYocto = BigInt(toYoctoNear(requestedAmount));
+      refundYocto = targetYocto < (availableYocto - gasBuffer) ? targetYocto.toString() : (availableYocto - gasBuffer).toString();
+    } else {
+      refundYocto = (availableYocto - gasBuffer).toString();
+    }
+
     const result = await vaultAccount.sendMoney(userAccountId, refundYocto);
     
     return {
@@ -252,9 +298,6 @@ export async function refundVaultFundsTo(userAccountId) {
       refundedAmount: formatYoctoNear(refundYocto)
     };
   } catch (err) {
-    if (err.message && err.message.includes("doesn't exist")) {
-      throw new Error("Vault is currently empty (0 Ⓝ). Make a purchase first to fund it!");
-    }
     throw new Error(err.message || 'Failed to refund vault funds');
   }
 }

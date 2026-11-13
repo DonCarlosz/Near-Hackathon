@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useVoiceLeash } from '../context/VoiceLeashContext';
+import { VOICELEASH_VAULT_ACCOUNT } from '../services/nearWallet';
 import DotMatrixMic from './DotMatrixMic';
 
 export default function LeashControl() {
@@ -275,7 +276,7 @@ export default function LeashControl() {
               Spent test funds are held in the VoiceLeash Vault. Reclaim them back to your account anytime with 1 click:
             </p>
             <div className="text-[10.5px] text-[#666] bg-[#EAE3D4]/60 p-2 border border-[#D8CFBC] break-all font-mono">
-              Vault: <code className="text-[#111111]">cab3b05692794e721ece5b6af59d0347bc709c19a35180bf80b7064882e591cb</code>
+              Vault: <code className="text-[#111111] font-bold">{VOICELEASH_VAULT_ACCOUNT}</code>
             </div>
             <button
               onClick={reclaimSpentFunds}

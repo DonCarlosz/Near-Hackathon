@@ -42,6 +42,36 @@ export function resolveProductsFromGoal(goal) {
     matched.add('prod-06');
   }
 
+  // 7. Intents / Cross-chain / Solver
+  if (text.includes('intent') || text.includes('swap') || text.includes('cross-chain') || text.includes('bridge') || text.includes('solver') || text.includes('route')) {
+    matched.add('prod-07');
+  }
+
+  // 8. TEE / Confidential / Enclave
+  if (text.includes('tee') || text.includes('enclave') || text.includes('confidential') || text.includes('hardware') || text.includes('sgx')) {
+    matched.add('prod-08');
+  }
+
+  // 9. Fastnear / RPC / Node
+  if (text.includes('rpc') || text.includes('fastnear') || text.includes('node') || text.includes('endpoint') || text.includes('latency')) {
+    matched.add('prod-09');
+  }
+
+  // 10. LLM / AI Model / Inference
+  if (text.includes('llama') || text.includes('llm') || text.includes('model') || text.includes('inference') || text.includes('ai cloud') || text.includes('reasoning')) {
+    matched.add('prod-10');
+  }
+
+  // 11. MPC / Chain Signatures
+  if (text.includes('mpc') || text.includes('chain signature') || text.includes('multichain') || text.includes('multi-chain') || text.includes('signature')) {
+    matched.add('prod-11');
+  }
+
+  // 12. ZK / Proof
+  if (text.includes('zk') || text.includes('proof') || text.includes('snark') || text.includes('zero-knowledge')) {
+    matched.add('prod-12');
+  }
+
   // If no direct keyword matched, perform scoring across products
   if (matched.size === 0) {
     const words = text.split(/\W+/).filter(w => w.length > 2);

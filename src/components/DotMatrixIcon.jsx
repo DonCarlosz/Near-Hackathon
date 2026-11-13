@@ -9,7 +9,7 @@ export default function DotMatrixIcon({ type = 'arrows', className = '' }) {
   // 10 cols x 8 rows
   // 1 = active dark/blue, 2 = active secondary, 0 = inactive background dot
   const patterns = {
-    // 01 / DFI: Opposing trading / feed arrows (Exact match to nearhackathon.com card 1)
+    // 01 / DFI: Opposing trading / feed arrows
     arrows: [
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       [0, 0, 1, 1, 1, 1, 0, 0, 1, 0],
@@ -20,7 +20,7 @@ export default function DotMatrixIcon({ type = 'arrows', className = '' }) {
       [0, 1, 0, 0, 1, 1, 1, 1, 0, 0],
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     ],
-    // 02 / INV: Rising bar chart (Exact match to nearhackathon.com card 2)
+    // 02 / INV: Rising bar chart
     bars: [
       [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
       [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
@@ -31,7 +31,7 @@ export default function DotMatrixIcon({ type = 'arrows', className = '' }) {
       [0, 1, 1, 0, 1, 0, 1, 0, 1, 0],
       [1, 1, 1, 0, 1, 0, 1, 0, 1, 0],
     ],
-    // 03 / PRV: Padlock / Private by design (Exact match to nearhackathon.com card 3)
+    // 03 / PRV: Padlock
     lock: [
       [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
       [0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
@@ -74,7 +74,73 @@ export default function DotMatrixIcon({ type = 'arrows', className = '' }) {
       [1, 1, 0, 0, 0, 0, 0, 0, 1, 1],
       [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ]
+    ],
+    // 07 / INT: Cross-chain intents routing
+    intents: [
+      [1, 1, 0, 0, 0, 0, 0, 0, 1, 1],
+      [0, 1, 1, 0, 0, 0, 0, 1, 1, 0],
+      [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+      [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+      [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+      [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+      [0, 1, 1, 0, 0, 0, 0, 1, 1, 0],
+      [1, 1, 0, 0, 0, 0, 0, 0, 1, 1],
+    ],
+    // 08 / TEE: Hardware enclave / security shield
+    tee: [
+      [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+      [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+      [1, 1, 0, 1, 1, 1, 1, 0, 1, 1],
+      [1, 1, 1, 1, 0, 0, 1, 1, 1, 1],
+      [1, 1, 1, 1, 0, 0, 1, 1, 1, 1],
+      [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+      [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+      [0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
+    ],
+    // 09 / RPC: Fast lightning bolt / sub-second RPC
+    rpc: [
+      [0, 0, 0, 0, 0, 1, 1, 0, 0, 0],
+      [0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
+      [0, 0, 0, 1, 1, 0, 0, 0, 0, 0],
+      [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+      [0, 0, 0, 0, 0, 1, 1, 0, 0, 0],
+      [0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
+      [0, 0, 0, 1, 1, 0, 0, 0, 0, 0],
+      [0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
+    ],
+    // 10 / LLM: Neural network nodes
+    llm: [
+      [0, 1, 1, 0, 0, 0, 0, 1, 1, 0],
+      [1, 1, 1, 1, 0, 0, 1, 1, 1, 1],
+      [0, 1, 1, 0, 1, 1, 0, 1, 1, 0],
+      [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+      [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+      [0, 1, 1, 0, 1, 1, 0, 1, 1, 0],
+      [1, 1, 1, 1, 0, 0, 1, 1, 1, 1],
+      [0, 1, 1, 0, 0, 0, 0, 1, 1, 0],
+    ],
+    // 11 / MPC: Linked multi-chain signature keys
+    mpc: [
+      [1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+      [1, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+      [1, 1, 1, 1, 1, 1, 0, 1, 0, 1],
+      [0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
+      [0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
+      [1, 0, 1, 0, 1, 1, 1, 1, 0, 0],
+      [0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+      [0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+    ],
+    // 12 / ZK: Cryptographic zero-knowledge proof check
+    zk: [
+      [0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
+      [0, 0, 0, 0, 0, 0, 0, 1, 1, 0],
+      [0, 0, 0, 0, 0, 0, 1, 1, 0, 0],
+      [1, 1, 0, 0, 0, 1, 1, 0, 0, 0],
+      [0, 1, 1, 0, 1, 1, 0, 0, 0, 0],
+      [0, 0, 1, 1, 1, 0, 0, 0, 0, 0],
+      [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    ],
   };
 
   const grid = patterns[type] || patterns.arrows;

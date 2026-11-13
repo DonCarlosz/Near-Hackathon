@@ -53,30 +53,21 @@ export function VoiceLeashProvider({ children }) {
     keyType: 'Function-Call Key (Only propose_purchase)'
   });
 
-  // Allocated Budget on-chain (Pre-funded daily allowance: 1.0 NEAR)
-  const [allocatedBudget, setAllocatedBudget] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const account = localStorage.getItem('voiceleash_wallet_account') || 'default';
-      const saved = localStorage.getItem(`voiceleash_allocated_budget_${account}`);
-      if (saved) return parseFloat(saved);
-    }
-    return 1.0; // Defaults to 1.0 NEAR daily allowance
-  });
-
   // Pending Purchase Modal/Drawer
   const [pendingRequest, setPendingRequest] = useState(null);
 
   // Active View Tab: 'market' | 'control' | 'history' | 'security'
   const [activeTab, setActiveTab] = useState('market');
 
-  // Activity Log & History — Synchronized with localStorage per account
+  // Activity Log & History — Synchronized with localStorage per account (filters out any stale fake hashes)
   const [history, setHistory] = useState(() => {
     if (typeof window !== 'undefined') {
       const account = localStorage.getItem('voiceleash_wallet_account') || 'default';
       const savedLogs = localStorage.getItem(`voiceleash_audit_history_${account}`);
       if (savedLogs) {
         try {
-          return JSON.parse(savedLogs);
+          const parsed = JSON.parse(savedLogs);
+          return parsed.filter(item => !item.txHash?.startsWith('auton-'));
         } catch (e) {}
       }
     }
@@ -111,7 +102,8 @@ export function VoiceLeashProvider({ children }) {
         const savedLogs = localStorage.getItem(`voiceleash_audit_history_${res.accountId}`);
         if (savedLogs) {
           try {
-            setHistory(JSON.parse(savedLogs));
+            const parsed = JSON.parse(savedLogs);
+            setHistory(parsed.filter(item => !item.txHash?.startsWith('auton-')));
           } catch (e) {}
         }
 
@@ -148,13 +140,6 @@ export function VoiceLeashProvider({ children }) {
       localStorage.setItem(`voiceleash_audit_history_${wallet.accountId}`, JSON.stringify(history));
     }
   }, [history, wallet.accountId]);
-
-  // Save allocated budget
-  useEffect(() => {
-    if (wallet.accountId) {
-      localStorage.setItem(`voiceleash_allocated_budget_${wallet.accountId}`, allocatedBudget.toString());
-    }
-  }, [allocatedBudget, wallet.accountId]);
 
   // Disconnect or Open Modal
   const openWalletModal = () => setIsWalletModalOpen(true);
@@ -206,54 +191,26 @@ export function VoiceLeashProvider({ children }) {
     const requiresApproval = product.price > policy.requireApprovalAbove;
 
     if (requiresApproval) {
+      // Over leash threshold -> halt and request human 1-tap sign-off
       setPendingRequest({
         id: `req-${Date.now()}`,
         product,
         reason: `Price of ${product.price} NEAR exceeds your auto-approval threshold of ${policy.requireApprovalAbove} NEAR.`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
-      showNotification(`Agent proposed ${product.name} — Human approval required!`, 'warning');
+      showNotification(`Agent proposed ${product.name} (${product.price} Ⓝ) — Human approval required!`, 'warning');
       setActiveTab('control');
     } else {
+      // Under leash threshold -> auto-approved path: prompt on-chain sign without pause
       executePurchase(product, 'Leash (Auto-approved under 0.25 Ⓝ threshold)');
     }
   };
 
-  // Execute purchase: Zero wallet pop-up for auto-approved items!
+  // Execute purchase: 100% REAL on-chain transaction broadcast via Meteor Wallet!
   const executePurchase = async (product, approvedBy) => {
-    const isAutoApproved = product.price <= policy.requireApprovalAbove;
+    showNotification(`Prompting Meteor Wallet to sign on-chain transaction for ${product.name} (${product.price} Ⓝ)...`, 'info');
 
-    // SCENARIO 1: Auto-Approved below threshold (Zero Wallet Pop-Up!)
-    if (isAutoApproved) {
-      const autonTxHash = `auton-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 7)}`;
-      
-      const newTx = {
-        id: `tx-${Date.now().toString().slice(-4)}`,
-        productName: product.name,
-        price: product.price,
-        status: 'COMPLETED (AUTONOMOUS)',
-        approvedBy: 'Leash (Autonomous Draw from Allocated 1.0 Ⓝ Vault)',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        txHash: autonTxHash,
-        deliverable: product.samplePayload
-      };
-
-      setHistory(prev => [newTx, ...prev]);
-      setPolicy(prev => ({ ...prev, spentToday: +(prev.spentToday + product.price).toFixed(3) }));
-      setAllocatedBudget(prev => Math.max(0, +(prev - product.price).toFixed(3)));
-      setPendingRequest(null);
-
-      try {
-        confetti({ particleCount: 50, spread: 60, origin: { y: 0.8 } });
-      } catch (e) {}
-
-      showNotification(`✓ Autonomous purchase confirmed for ${product.name} (${product.price} Ⓝ) — Zero wallet pop-up needed!`, 'success');
-      return;
-    }
-
-    // SCENARIO 2: Human-Approved (Above Threshold)
-    showNotification(`Prompting Meteor Wallet to sign on-chain transaction for ${product.name}...`, 'info');
-
+    // Real on-chain broadcast via Meteor Wallet!
     const txOutcome = await signAndBroadcastPurchase({
       accountId: wallet.accountId,
       productName: product.name,
@@ -271,7 +228,7 @@ export function VoiceLeashProvider({ children }) {
       id: `tx-${Date.now().toString().slice(-4)}`,
       productName: product.name,
       price: product.price,
-      status: 'COMPLETED (HUMAN-APPROVED)',
+      status: 'COMPLETED',
       approvedBy,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       txHash,
@@ -297,7 +254,7 @@ export function VoiceLeashProvider({ children }) {
       confetti({ particleCount: 60, spread: 70, origin: { y: 0.8 } });
     } catch (e) {}
 
-    showNotification(`On-chain purchase confirmed for ${product.name} (${product.price} Ⓝ)! Tx: ${txHash.slice(0, 10)}... Deliverable unlocked.`, 'success');
+    showNotification(`✓ On-chain purchase confirmed for ${product.name} (${product.price} Ⓝ)! Tx: ${txHash.slice(0, 10)}... Deliverable unlocked.`, 'success');
   };
 
   // Allocate Daily Budget On-Chain (Funds Allocation via Meteor)
@@ -316,7 +273,6 @@ export function VoiceLeashProvider({ children }) {
     });
 
     if (outcome.success) {
-      setAllocatedBudget(amountNear);
       showNotification(`Successfully allocated ${amountNear} Ⓝ to VoiceLeash Vault on-chain! Tx: ${outcome.txHash.slice(0, 8)}...`, 'success');
       
       const allocTx = {
@@ -371,7 +327,6 @@ export function VoiceLeashProvider({ children }) {
       }
 
       setPolicy(prev => ({ ...prev, spentToday: 0 }));
-      setAllocatedBudget(0);
 
       try {
         confetti({ particleCount: 70, spread: 80, origin: { y: 0.7 } });
@@ -407,7 +362,6 @@ export function VoiceLeashProvider({ children }) {
         disconnectWallet,
         policy,
         setPolicy,
-        allocatedBudget,
         updateRulesWithText,
         pendingRequest,
         requestAgentPurchase,

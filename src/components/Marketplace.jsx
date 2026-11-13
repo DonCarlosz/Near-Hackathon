@@ -7,13 +7,19 @@ import AgentGoalPanel from './AgentGoalPanel';
 export default function Marketplace() {
   const { policy, requestAgentPurchase } = useVoiceLeash();
   const [activeFilter, setActiveFilter] = useState('ALL');
+  const [showAll, setShowAll] = useState(false);
 
-  const filterList = ['ALL', 'DATA', 'API', 'RESEARCH', 'NEWS'];
+  const filterList = ['ALL', 'DATA', 'API', 'RESEARCH', 'NEWS', 'INTENTS', 'SECURITY', 'AI'];
 
   const filteredProducts = MARKETPLACE_PRODUCTS.filter(p => {
     if (activeFilter === 'ALL') return true;
     return p.tags.includes(activeFilter);
   });
+
+  // Display 6 items initially when in 'ALL' view, or all if showAll is true
+  const displayedProducts = (activeFilter === 'ALL' && !showAll)
+    ? filteredProducts.slice(0, 6)
+    : filteredProducts;
 
   return (
     <div className="space-y-10">
@@ -29,7 +35,10 @@ export default function Marketplace() {
             {filterList.map(cat => (
               <button
                 key={cat}
-                onClick={() => setActiveFilter(cat)}
+                onClick={() => {
+                  setActiveFilter(cat);
+                  setShowAll(true); // show all matches if filter selected
+                }}
                 className={`px-2.5 py-1 text-[11px] uppercase transition-colors ${
                   activeFilter === cat
                     ? 'bg-[#111111] text-white font-bold'
@@ -43,6 +52,10 @@ export default function Marketplace() {
 
           <div className="flex items-center gap-4 text-[#555] text-[11px]">
             <div>
+              <span className="text-[#888] uppercase">STOCK: </span>
+              <span className="font-bold text-[#111111]">12 CAPABILITIES</span>
+            </div>
+            <div>
               <span className="text-[#888] uppercase">AUTO-APPROVE: </span>
               <span className="font-bold text-[#0047FF]">≤ {policy.requireApprovalAbove} Ⓝ</span>
             </div>
@@ -55,7 +68,7 @@ export default function Marketplace() {
 
         {/* Connected 3-Column Architectural Grid (Identical to nearhackathon.com) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 border-t border-l border-[#D8CFBC]">
-          {filteredProducts.map((prod) => {
+          {displayedProducts.map((prod) => {
             const willAutoApprove = prod.price <= policy.requireApprovalAbove;
             const exceedsDaily = (policy.spentToday + prod.price) > policy.dailyLimit;
 
@@ -97,7 +110,7 @@ export default function Marketplace() {
                     {prod.description}
                   </p>
 
-                  {/* 6. Rectangular Hairline Tags (Matches: [ TRADING ] [ NEAR INTENTS ]) */}
+                  {/* 6. Rectangular Hairline Tags */}
                   <div className="flex flex-wrap gap-1.5 mb-6">
                     {prod.tags.map(t => (
                       <span
@@ -131,6 +144,19 @@ export default function Marketplace() {
             );
           })}
         </div>
+
+        {/* See More / Expand Catalog Button */}
+        {activeFilter === 'ALL' && (
+          <div className="pt-4 flex items-center justify-center">
+            <button
+              onClick={() => setShowAll(!showAll)}
+              className="px-8 py-3.5 border border-[#111111] hover:border-[#0047FF] bg-[#EFE9DC] hover:bg-[#111111] text-[#111111] hover:text-white font-mono text-xs font-bold uppercase transition-all shadow-2xs flex items-center gap-2"
+            >
+              <span>{showAll ? "[ SHOW LESS / COLLAPSE TO 6 ↑ ]" : "[ SEE MORE / EXPAND CATALOG (+6 MORE CAPABILITIES) ↓ ]"}</span>
+            </button>
+          </div>
+        )}
+
       </div>
 
     </div>

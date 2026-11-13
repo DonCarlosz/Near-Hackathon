@@ -16,6 +16,10 @@ export default function LeashControl() {
   const [inputRule, setInputRule] = useState(policy.rawRuleText);
   const [isListening, setIsListening] = useState(false);
 
+  useEffect(() => {
+    setInputRule(policy.rawRuleText);
+  }, [policy.rawRuleText]);
+
   // Voice recognition toggle
   const toggleListening = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;

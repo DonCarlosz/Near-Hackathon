@@ -43,20 +43,33 @@ export function VoiceLeashProvider({ children }) {
 
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
 
-  // Policy & Spending Limits — 1.0 NEAR Daily / 0.25 NEAR auto-approval cap
+  // Policy & Spending Limits — Persisted across page refreshes per account!
   const [policy, setPolicy] = useState(() => {
     let savedSpent = 0.0;
+    let savedLimit = 1.0;
+    let savedThreshold = 0.25;
+    let savedText = "Spend up to 1 NEAR daily on research, but ask me for anything over 0.25.";
+
     if (typeof window !== 'undefined') {
       const account = localStorage.getItem('voiceleash_wallet_account') || 'default';
       const s = localStorage.getItem(`voiceleash_spent_today_${account}`);
       if (s) savedSpent = parseFloat(s);
+
+      const l = localStorage.getItem(`voiceleash_policy_limit_${account}`);
+      if (l) savedLimit = parseFloat(l);
+
+      const t = localStorage.getItem(`voiceleash_policy_threshold_${account}`);
+      if (t) savedThreshold = parseFloat(t);
+
+      const txt = localStorage.getItem(`voiceleash_policy_text_${account}`);
+      if (txt) savedText = txt;
     }
     return {
-      dailyLimit: 1.0,
-      requireApprovalAbove: 0.25,
+      dailyLimit: savedLimit,
+      requireApprovalAbove: savedThreshold,
       spentToday: savedSpent,
       allowedCategories: ['ALL'],
-      rawRuleText: "Spend up to 1 NEAR daily on research, but ask me for anything over 0.25.",
+      rawRuleText: savedText,
       contractId: POLICY_CONTRACT_ACCOUNT,
       agentKey: 'ed25519:5A3wa7LxywhZxDb8UXq4JPAGopW8HAj4fSqFJXf6rcT4',
       keyType: 'Function-Call Key (Only propose_purchase)'
@@ -116,6 +129,19 @@ export function VoiceLeashProvider({ children }) {
           try {
             setHistory(JSON.parse(savedLogs));
           } catch (e) {}
+        }
+
+        // Load persisted policy for this specific account
+        const savedLimit = localStorage.getItem(`voiceleash_policy_limit_${res.accountId}`);
+        const savedThreshold = localStorage.getItem(`voiceleash_policy_threshold_${res.accountId}`);
+        const savedText = localStorage.getItem(`voiceleash_policy_text_${res.accountId}`);
+        if (savedLimit || savedThreshold || savedText) {
+          setPolicy(prev => ({
+            ...prev,
+            dailyLimit: savedLimit ? parseFloat(savedLimit) : prev.dailyLimit,
+            requireApprovalAbove: savedThreshold ? parseFloat(savedThreshold) : prev.requireApprovalAbove,
+            rawRuleText: savedText || prev.rawRuleText
+          }));
         }
 
         showNotification(`Connected to ${res.accountId} (${effectiveBal} Ⓝ)`, 'success');
@@ -179,10 +205,15 @@ export function VoiceLeashProvider({ children }) {
     showNotification('Wallet disconnected', 'info');
   };
 
-  // Update Plain-Language Rules
+  // Update Plain-Language Rules & Persist to Storage
   const updateRulesWithText = (text) => {
     const parsed = parseNaturalLanguageRules(text);
     if (!parsed) return;
+
+    const account = wallet.accountId || 'default';
+    localStorage.setItem(`voiceleash_policy_limit_${account}`, parsed.dailyLimit.toString());
+    localStorage.setItem(`voiceleash_policy_threshold_${account}`, parsed.requireApprovalAbove.toString());
+    localStorage.setItem(`voiceleash_policy_text_${account}`, text);
 
     setPolicy(prev => ({
       ...prev,

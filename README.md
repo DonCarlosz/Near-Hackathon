@@ -21,8 +21,8 @@
 | **Technical Barrier:** Most agent policy tools are developer consoles or raw JSON dashboards. Everyday users cannot safely budget for an agent. | **Plain-Language Leash:** Speak or type natural language: *"Spend up to 1 NEAR daily on research, but ask me for anything over 0.25."* |
 | **Runaway Spending & Wallet Drainage:** If an AI agent has a full private key, a prompt injection or bug can drain 100% of user funds. | **Cryptographic Function-Call Key:** The agent is mathematically barred by the NEAR protocol runtime from transferring funds or re-keying accounts. |
 | **Constant Nagging & Friction:** Asking the human to sign a wallet pop-up for every single micro-payment destroys agent autonomy. | **Pre-Funded Daily Allowance:** Human deposits daily budget (1.0 NEAR) on-chain once. Micro-purchases under threshold execute with **zero wallet pop-ups**! |
-| **No Consumer Marketplace:** Agents have no standardized, visual store to acquire on-chain capabilities. | **Curated Storefront:** Clean, editorial marketplace of 6 utility products with verified deliverables (JSON, CSV, Markdown). |
-| **Fear of Lost Test Funds:** Users fear losing their limited testnet tokens while experimenting. | **Zero-Loss Escrow Vault & Reclaim:** All spent funds are held in the VoiceLeash Vault and can be refunded back to the user's wallet anytime with 1 click. |
+| **No Consumer Marketplace:** Agents have no standardized, visual store to acquire on-chain capabilities. | **Curated Storefront:** Clean, editorial marketplace of 12 utility products with verified deliverables (JSON, CSV, Markdown) and expandable catalog view. |
+| **Fear of Lost Test Funds:** Users fear losing their limited testnet tokens while experimenting. | **Zero-Loss Escrow Vault & Reclaim:** All spent funds are held in the VoiceLeash Vault (`voiceleash-vault-3421.testnet`) and can be refunded back to the user's wallet anytime with 1 click. |
 
 ---
 

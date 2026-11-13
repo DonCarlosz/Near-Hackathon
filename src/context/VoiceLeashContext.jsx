@@ -318,21 +318,51 @@ export function VoiceLeashProvider({ children }) {
 
     try {
       const res = await refundVaultFundsTo(wallet.accountId);
+      const refundedNum = typeof res.refundedAmount === 'number' ? res.refundedAmount : parseFloat(res.refundedAmount);
       
-      // Pull updated live balance
-      const live = await getLiveTestnetBalance(wallet.accountId);
-      if (live.exists) {
-        setWallet(prev => ({ ...prev, balance: live.balance }));
-        localStorage.setItem('voiceleash_wallet_balance', live.balance.toString());
-      }
+      // 1. Immediately update UI balance so the user sees their balance restored without waiting
+      const updatedBalance = +(wallet.balance + refundedNum).toFixed(2);
+      setWallet(prev => ({ ...prev, balance: updatedBalance }));
+      localStorage.setItem('voiceleash_wallet_balance', updatedBalance.toString());
 
+      // 2. Reset spent today
       setPolicy(prev => ({ ...prev, spentToday: 0 }));
+
+      // 3. Add settlement transaction record to audit history
+      const refundTx = {
+        id: `refund-${Date.now().toString().slice(-4)}`,
+        productName: `Vault Refund to ${wallet.accountId}`,
+        price: refundedNum,
+        status: 'REFUNDED',
+        approvedBy: 'Escrow Vault (1-Click Reclaim)',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        txHash: res.txHash,
+        deliverable: {
+          type: 'TESTNET_VAULT_REFUND',
+          vault: VOICELEASH_VAULT_ACCOUNT,
+          recipient: wallet.accountId,
+          refundedAmount: `${refundedNum} NEAR`,
+          status: 'CONFIRMED_ON_CHAIN'
+        }
+      };
+      setHistory(prev => [refundTx, ...prev]);
+
+      // 4. Poll blockchain RPC after 2.5s for finality confirmation
+      setTimeout(async () => {
+        try {
+          const live = await getLiveTestnetBalance(wallet.accountId);
+          if (live.exists) {
+            setWallet(prev => ({ ...prev, balance: live.balance }));
+            localStorage.setItem('voiceleash_wallet_balance', live.balance.toString());
+          }
+        } catch (e) {}
+      }, 2500);
 
       try {
         confetti({ particleCount: 70, spread: 80, origin: { y: 0.7 } });
       } catch (e) {}
 
-      showNotification(`Reclaimed ${res.refundedAmount} NEAR back to ${wallet.accountId}! Tx: ${res.txHash?.slice(0, 8)}...`, 'success');
+      showNotification(`✓ Reclaimed ${refundedNum} NEAR back to ${wallet.accountId}! Tx: ${res.txHash?.slice(0, 10)}...`, 'success');
     } catch (err) {
       showNotification(`Refund notice: ${err.message}`, 'error');
     }

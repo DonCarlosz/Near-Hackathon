@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useVoiceLeash } from '../context/VoiceLeashContext';
 import { MARKETPLACE_PRODUCTS } from '../data/products';
 import DotMatrixIcon from './DotMatrixIcon';
+import DotMatrixMic from './DotMatrixMic';
 
 /**
  * Intelligent Goal Resolver: maps plain-language intent to actual Marketplace Capabilities
@@ -99,8 +100,43 @@ export default function AgentGoalPanel() {
   const { wallet, policy, requestAgentPurchase, showNotification, setActiveTab } = useVoiceLeash();
   const [goalText, setGoalText] = useState('');
   const [isRunning, setIsRunning] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [agentLogs, setAgentLogs] = useState([]);
   const [synthesizedResult, setSynthesizedResult] = useState(null);
+
+  // Web Speech API Voice Recognition for Autonomous Agent Goal
+  const toggleVoiceInput = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in this browser. Please type your goal.");
+      return;
+    }
+
+    if (isListening) {
+      setIsListening(false);
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => setIsListening(true);
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setGoalText(transcript);
+        setIsListening(false);
+        runAutonomousAgent(transcript);
+      };
+      recognition.onerror = () => setIsListening(false);
+      recognition.onend = () => setIsListening(false);
+      recognition.start();
+    } catch (err) {
+      setIsListening(false);
+    }
+  };
 
   const goalPresets = [
     {
@@ -223,18 +259,39 @@ export default function AgentGoalPanel() {
 
       {/* Goal Input & Action */}
       <div className="space-y-3 font-mono text-xs">
-        <form onSubmit={handleSubmit} className="flex gap-2">
+        <form onSubmit={handleSubmit} className="flex gap-2 items-center">
+          {/* Dot Matrix Voice Microphone */}
+          <button
+            type="button"
+            onClick={toggleVoiceInput}
+            className={`p-2.5 border transition-all flex items-center justify-center shrink-0 ${
+              isListening
+                ? 'bg-red-50 border-red-500 shadow-sm'
+                : 'bg-[#EAE3D4] border-[#D8CFBC] hover:border-[#0047FF] hover:bg-[#E5DFC8]'
+            }`}
+            title={isListening ? "Listening... click to stop" : "Click to speak your shopping goal"}
+          >
+            <DotMatrixMic isListening={isListening} />
+          </button>
+
           <input
             type="text"
             value={goalText}
             onChange={(e) => setGoalText(e.target.value)}
-            placeholder="Type any goal: e.g. 'Get weather report', 'Check crypto prices', 'Summarize latest news'..."
-            className="flex-1 p-3 bg-[#FAF7F0] border border-[#D8CFBC] focus:outline-none focus:border-[#0047FF] text-xs font-mono"
+            placeholder={
+              isListening
+                ? "🎙️ Listening to your voice... Speak your goal now"
+                : "Speak or type any goal: e.g. 'Get weather report', 'Check crypto prices', 'Summarize latest news'..."
+            }
+            className={`flex-1 p-3 bg-[#FAF7F0] border text-xs font-mono focus:outline-none transition-colors ${
+              isListening ? 'border-red-400 bg-red-50/20' : 'border-[#D8CFBC] focus:border-[#0047FF]'
+            }`}
           />
+
           <button
             type="submit"
             disabled={isRunning || !goalText.trim()}
-            className="px-6 py-3 bg-[#0047FF] hover:bg-[#003CD6] text-white font-bold uppercase transition-colors disabled:opacity-50 flex items-center gap-1.5 shadow-2xs"
+            className="px-6 py-3 bg-[#0047FF] hover:bg-[#003CD6] text-white font-bold uppercase transition-colors disabled:opacity-50 flex items-center gap-1.5 shadow-2xs shrink-0"
           >
             <span>{isRunning ? "Agent Thinking..." : "Run Agent ↗"}</span>
           </button>

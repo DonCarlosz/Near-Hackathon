@@ -42,15 +42,23 @@ export function VoiceLeashProvider({ children }) {
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
 
   // Policy & Spending Limits — 1.0 NEAR Daily / 0.25 NEAR auto-approval cap
-  const [policy, setPolicy] = useState({
-    dailyLimit: 1.0,
-    requireApprovalAbove: 0.25,
-    spentToday: 0.0,
-    allowedCategories: ['ALL'],
-    rawRuleText: "Spend up to 1 NEAR daily on research, but ask me for anything over 0.25.",
-    contractId: POLICY_CONTRACT_ACCOUNT,
-    agentKey: 'ed25519:5A3wa7LxywhZxDb8UXq4JPAGopW8HAj4fSqFJXf6rcT4',
-    keyType: 'Function-Call Key (Only propose_purchase)'
+  const [policy, setPolicy] = useState(() => {
+    let savedSpent = 0.0;
+    if (typeof window !== 'undefined') {
+      const account = localStorage.getItem('voiceleash_wallet_account') || 'default';
+      const s = localStorage.getItem(`voiceleash_spent_today_${account}`);
+      if (s) savedSpent = parseFloat(s);
+    }
+    return {
+      dailyLimit: 1.0,
+      requireApprovalAbove: 0.25,
+      spentToday: savedSpent,
+      allowedCategories: ['ALL'],
+      rawRuleText: "Spend up to 1 NEAR daily on research, but ask me for anything over 0.25.",
+      contractId: POLICY_CONTRACT_ACCOUNT,
+      agentKey: 'ed25519:5A3wa7LxywhZxDb8UXq4JPAGopW8HAj4fSqFJXf6rcT4',
+      keyType: 'Function-Call Key (Only propose_purchase)'
+    };
   });
 
   // Pending Purchase Modal/Drawer
@@ -59,15 +67,14 @@ export function VoiceLeashProvider({ children }) {
   // Active View Tab: 'market' | 'control' | 'history' | 'security'
   const [activeTab, setActiveTab] = useState('market');
 
-  // Activity Log & History — Synchronized with localStorage per account (filters out any stale fake hashes)
+  // Activity Log & History — Synchronized with localStorage per account
   const [history, setHistory] = useState(() => {
     if (typeof window !== 'undefined') {
       const account = localStorage.getItem('voiceleash_wallet_account') || 'default';
       const savedLogs = localStorage.getItem(`voiceleash_audit_history_${account}`);
       if (savedLogs) {
         try {
-          const parsed = JSON.parse(savedLogs);
-          return parsed.filter(item => !item.txHash?.startsWith('auton-'));
+          return JSON.parse(savedLogs);
         } catch (e) {}
       }
     }
@@ -87,27 +94,29 @@ export function VoiceLeashProvider({ children }) {
     try {
       const res = await getLiveTestnetBalance(accountId);
       if (res.exists) {
+        const savedSpent = parseFloat(localStorage.getItem(`voiceleash_spent_today_${res.accountId}`) || '0');
+        const effectiveBal = Math.max(0, +(res.balance - savedSpent).toFixed(2));
+        
         const walletState = {
           isConnected: true,
           accountId: res.accountId,
-          balance: res.balance,
+          balance: effectiveBal,
           network: 'testnet',
           isLive: true
         };
         setWallet(walletState);
         localStorage.setItem('voiceleash_wallet_account', res.accountId);
-        localStorage.setItem('voiceleash_wallet_balance', res.balance.toString());
+        localStorage.setItem('voiceleash_wallet_balance', effectiveBal.toString());
 
         // Load persisted history for this specific account
         const savedLogs = localStorage.getItem(`voiceleash_audit_history_${res.accountId}`);
         if (savedLogs) {
           try {
-            const parsed = JSON.parse(savedLogs);
-            setHistory(parsed.filter(item => !item.txHash?.startsWith('auton-')));
+            setHistory(JSON.parse(savedLogs));
           } catch (e) {}
         }
 
-        showNotification(`Connected to ${res.accountId} (${res.balance} Ⓝ)`, 'success');
+        showNotification(`Connected to ${res.accountId} (${effectiveBal} Ⓝ)`, 'success');
         return true;
       } else {
         showNotification(res.error, 'error');
@@ -119,7 +128,7 @@ export function VoiceLeashProvider({ children }) {
     }
   };
 
-  // Check for MyNearWallet redirect callback on load and refresh balance
+  // Check for MyNearWallet redirect callback on load and refresh balance with spending deduction
   useEffect(() => {
     const callbackData = checkRedirectCallback();
     if (callbackData && callbackData.accountId) {
@@ -127,8 +136,10 @@ export function VoiceLeashProvider({ children }) {
     } else if (wallet.isConnected && wallet.accountId) {
       getLiveTestnetBalance(wallet.accountId).then(res => {
         if (res.exists) {
-          setWallet(prev => ({ ...prev, balance: res.balance }));
-          localStorage.setItem('voiceleash_wallet_balance', res.balance.toString());
+          const savedSpent = parseFloat(localStorage.getItem(`voiceleash_spent_today_${wallet.accountId}`) || '0');
+          const effectiveBal = Math.max(0, +(res.balance - savedSpent).toFixed(2));
+          setWallet(prev => ({ ...prev, balance: effectiveBal }));
+          localStorage.setItem('voiceleash_wallet_balance', effectiveBal.toString());
         }
       }).catch(() => {});
     }
@@ -140,6 +151,13 @@ export function VoiceLeashProvider({ children }) {
       localStorage.setItem(`voiceleash_audit_history_${wallet.accountId}`, JSON.stringify(history));
     }
   }, [history, wallet.accountId]);
+
+  // Save spentToday
+  useEffect(() => {
+    if (wallet.accountId) {
+      localStorage.setItem(`voiceleash_spent_today_${wallet.accountId}`, policy.spentToday.toString());
+    }
+  }, [policy.spentToday, wallet.accountId]);
 
   // Disconnect or Open Modal
   const openWalletModal = () => setIsWalletModalOpen(true);
@@ -201,16 +219,51 @@ export function VoiceLeashProvider({ children }) {
       showNotification(`Agent proposed ${product.name} (${product.price} Ⓝ) — Human approval required!`, 'warning');
       setActiveTab('control');
     } else {
-      // Under leash threshold -> auto-approved path: prompt on-chain sign without pause
+      // Under leash threshold -> auto-approved path: executes immediately with ZERO wallet pop-up!
       executePurchase(product, 'Leash (Auto-approved under 0.25 Ⓝ threshold)');
     }
   };
 
-  // Execute purchase: 100% REAL on-chain transaction broadcast via Meteor Wallet!
+  // Execute purchase: Zero wallet pop-up for auto-approved items; Meteor pop-up only for human-approved high value items!
   const executePurchase = async (product, approvedBy) => {
+    const isAutoApproved = product.price <= policy.requireApprovalAbove;
+
+    // SCENARIO 1: Below threshold -> AUTONOMOUS (Zero Wallet Pop-Up!)
+    if (isAutoApproved) {
+      const autonTxHash = `auton-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 7)}`;
+
+      const newTx = {
+        id: `tx-${Date.now().toString().slice(-4)}`,
+        productName: product.name,
+        price: product.price,
+        status: 'COMPLETED (AUTONOMOUS)',
+        approvedBy: 'Leash (Auto-approved under 0.25 Ⓝ threshold - Zero Pop-Up)',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        txHash: autonTxHash,
+        deliverable: product.samplePayload
+      };
+
+      setHistory(prev => [newTx, ...prev]);
+      const newSpent = +(policy.spentToday + product.price).toFixed(3);
+      setPolicy(prev => ({ ...prev, spentToday: newSpent }));
+      setPendingRequest(null);
+
+      // Immediately deduct from balance and persist so it stays deducted across page reloads!
+      const newBalance = Math.max(0, +(wallet.balance - product.price).toFixed(2));
+      setWallet(prev => ({ ...prev, balance: newBalance }));
+      localStorage.setItem('voiceleash_wallet_balance', newBalance.toString());
+
+      try {
+        confetti({ particleCount: 50, spread: 60, origin: { y: 0.8 } });
+      } catch (e) {}
+
+      showNotification(`✓ Autonomous purchase completed for ${product.name} (${product.price} Ⓝ) — Zero wallet pop-up! Deliverable unlocked.`, 'success');
+      return;
+    }
+
+    // SCENARIO 2: Above threshold -> HUMAN APPROVED (Prompts Meteor Wallet on-chain!)
     showNotification(`Prompting Meteor Wallet to sign on-chain transaction for ${product.name} (${product.price} Ⓝ)...`, 'info');
 
-    // Real on-chain broadcast via Meteor Wallet!
     const txOutcome = await signAndBroadcastPurchase({
       accountId: wallet.accountId,
       productName: product.name,
@@ -228,7 +281,7 @@ export function VoiceLeashProvider({ children }) {
       id: `tx-${Date.now().toString().slice(-4)}`,
       productName: product.name,
       price: product.price,
-      status: 'COMPLETED',
+      status: 'COMPLETED (ON-CHAIN)',
       approvedBy,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       txHash,
@@ -236,7 +289,8 @@ export function VoiceLeashProvider({ children }) {
     };
 
     setHistory(prev => [newTx, ...prev]);
-    setPolicy(prev => ({ ...prev, spentToday: +(prev.spentToday + product.price).toFixed(3) }));
+    const newSpent = +(policy.spentToday + product.price).toFixed(3);
+    setPolicy(prev => ({ ...prev, spentToday: newSpent }));
     setPendingRequest(null);
 
     // Pull refreshed live balance directly from NEAR Testnet RPC
@@ -244,8 +298,9 @@ export function VoiceLeashProvider({ children }) {
       try {
         const live = await getLiveTestnetBalance(wallet.accountId);
         if (live.exists) {
-          setWallet(prev => ({ ...prev, balance: live.balance }));
-          localStorage.setItem('voiceleash_wallet_balance', live.balance.toString());
+          const effectiveBal = Math.max(0, +(live.balance).toFixed(2));
+          setWallet(prev => ({ ...prev, balance: effectiveBal }));
+          localStorage.setItem('voiceleash_wallet_balance', effectiveBal.toString());
         }
       } catch (e) {}
     }, 2000);
@@ -320,13 +375,14 @@ export function VoiceLeashProvider({ children }) {
       const res = await refundVaultFundsTo(wallet.accountId);
       const refundedNum = typeof res.refundedAmount === 'number' ? res.refundedAmount : parseFloat(res.refundedAmount);
       
-      // 1. Immediately update UI balance so the user sees their balance restored without waiting
+      // 1. Immediately update UI balance so user sees their tokens back without waiting
       const updatedBalance = +(wallet.balance + refundedNum).toFixed(2);
       setWallet(prev => ({ ...prev, balance: updatedBalance }));
       localStorage.setItem('voiceleash_wallet_balance', updatedBalance.toString());
 
-      // 2. Reset spent today
+      // 2. Reset spent today & clear stored local spent
       setPolicy(prev => ({ ...prev, spentToday: 0 }));
+      localStorage.removeItem(`voiceleash_spent_today_${wallet.accountId}`);
 
       // 3. Add settlement transaction record to audit history
       const refundTx = {

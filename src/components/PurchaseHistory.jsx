@@ -78,14 +78,26 @@ export default function PurchaseHistory() {
                     {tx.timestamp}
                   </td>
                   <td className="py-3.5 px-4 border-r border-[#D8CFBC] text-[#0047FF]">
-                    <a
-                      href={`https://testnet.nearblocks.io/txns/${tx.txHash}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="underline"
-                    >
-                      {tx.txHash} ↗
-                    </a>
+                    {tx.txHash?.startsWith('auton-') ? (
+                      <a
+                        href="https://testnet.nearblocks.io/address/policy.voiceleash.testnet"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline text-emerald-700 font-bold"
+                        title="Autonomous execution under policy.voiceleash.testnet"
+                      >
+                        [ AUTON LEASH ] ↗
+                      </a>
+                    ) : (
+                      <a
+                        href={`https://testnet.nearblocks.io/txns/${tx.txHash}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline font-bold"
+                      >
+                        {tx.txHash?.length > 16 ? `${tx.txHash.slice(0, 14)}...` : tx.txHash} ↗
+                      </a>
+                    )}
                   </td>
                   <td className="py-3.5 px-4 border-r border-[#D8CFBC] text-right">
                     <button

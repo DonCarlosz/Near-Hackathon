@@ -1,0 +1,28 @@
+{
+  "project_name": "VoiceLeash",
+  "tagline": "Personal shopper for your AI agent: plain-language rules + visual marketplace so non-technical users safely let an agent shop.",
+  "description": "VoiceLeash bridges non-technical consumers and autonomous AI agents. Users speak or type spending rules in plain English. The agent browses a visual marketplace of digital capabilities (data feeds, weather APIs, market intelligence) and proposes purchases. Low-cost items are auto-approved under the leash; high-value purchases require a 1-tap human signature. The agent never receives a full-access key, only a mathematically restricted NEAR Function-Call key.",
+  "tracks": [
+    "agents",
+    "security",
+    "realworld"
+  ],
+  "payout_account": "d4rc.testnet",
+  "demo_steps": [
+    "1. Connect NEAR testnet wallet (Meteor Wallet or direct RPC lookup)",
+    "2. Deposit daily 1.0 NEAR budget on-chain -> Enables autonomous shopping with ZERO wallet pop-ups",
+    "3. Set spending rules in plain language (e.g., 'Spend up to 1 NEAR daily, ask above 0.25')",
+    "4. Type a goal or run 'Weather Radar' (0.15 NEAR) -> Autonomous purchase succeeds with 0 wallet pop-ups",
+    "5. Buy a high-cost capability (e.g. Market Summary 0.5 NEAR) -> Intercepted for 1-tap human approval",
+    "6. Inspect deliverables in Audit Trail and 1-click export to JSON / CSV",
+    "7. Click 'Reclaim Test Funds' in Leash Rules -> Escrow Vault refunds 100% of test funds back to your wallet"
+  ],
+  "contracts": [
+    {
+      "network": "testnet",
+      "contract_id": "policy.voiceleash.testnet",
+      "code_path": "contracts/VoiceLeashPolicy.rs"
+    }
+  ],
+  "ai_disclosure": "Frontend UI components and initial boilerplate were assisted with AI coding tools; custom architecture, NEAR Function-Call key enforcement logic, and plain-language regex parsing engine were designed and verified for the hackathon."
+}

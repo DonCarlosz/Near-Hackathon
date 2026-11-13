@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoiceLeash — Personal Shopper for Your AI Agent</title>
+<style>
+  :root {
+    --bg: #F4F0E8;
+    --card: #FFFFFF;
+    --text: #111;
+    --muted: #666;
+    --blue: #1a56db;
+    --border: #e0e0e0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  a { color: var(--blue); text-decoration: none; }
+  button, .btn {
+    cursor: pointer;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 8px 16px;
+  }
+  .btn-primary { background: var(--blue); color: white; }
+  .btn-wallet { background: #111; color: white; }
+
+  nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 40px;
+    background: white;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo { font-weight: 700; font-size: 18px; }
+  .nav-links { display: flex; gap: 20px; align-items: center; }
+  .nav-links a { color: var(--text); font-size: 14px; font-weight: 500; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .container { max-width: 1040px; margin: 0 auto; padding: 48px 40px; }
+
+  .section-label {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    margin-bottom: 8px;
+  }
+  .section-title {
+    font-size: 40px;
+    font-weight: 700;
+    line-height: 1.05;
+    margin-bottom: 8px;
+  }
+  .section-title span { color: var(--blue); }
+  .section-sub { color: var(--muted); font-size: 15px; max-width: 520px; }
+
+  .track-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 36px;
+  }
+  .track-card {
+    background: white;
+    border: 1px solid #ddd;
+    padding: 18px 18px 14px;
+    display: flex;
+    flex-direction: column;
+  }
+  .track-id {
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 10px;
+    font-family: ui-monospace, monospace;
+  }
+  .product-visual {
+    height: 100px;
+    background: #f0f4f8;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    margin-bottom: 14px;
+  }
+  .track-cat {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--blue);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .track-card h3 {
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    line-height: 1.25;
+  }
+  .track-card p {
+    font-size: 13.5px;
+    color: #555;
+    line-height: 1.45;
+    flex-grow: 1;
+    margin-bottom: 12px;
+  }
+  .price-tag {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--blue);
+    margin-bottom: 12px;
+  }
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .tag {
+    font-size: 10px;
+    padding: 2px 7px;
+    border: 1px solid #ddd;
+    color: #666;
+  }
+  .card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+    font-size: 13px;
+  }
+
+  .pending { border-color: #eab308; }
+  .tx-row { display: flex; justify-content: space-between; font-size: 14px; padding: 3px 0; }
+  .actions { display: flex; gap: 8px; margin-top: 12px; }
+  .actions button { flex: 1; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">🎤 VoiceLeash</div>
+  <div class="nav-links">
+    <a href="#" onclick="showPage('landing')">Home</a>
+    <a href="#" onclick="showPage('marketplace')">Shop</a>
+    <a href="#" onclick="showPage('dashboard')">Control</a>
+    <button class="btn-wallet" id="walletBtn" onclick="toggleWallet()">Connect Wallet</button>
+  </div>
+</nav>
+
+<div id="landing" class="page active">
+  <div class="container">
+    <div class="section-label">01 / PERSONAL SHOPPER</div>
+    <div class="section-title">Your AI agent’s<br><span>personal shopper.</span></div>
+    <p class="section-sub" style="margin:14px 0 24px;">Set simple rules in plain language. Watch your agent shop for useful data and services. Approve with a tap. It never gets the keys.</p>
+    <button class="btn-primary" onclick="showPage('marketplace')">Open the Shop</button>
+  </div>
+</div>
+
+<div id="marketplace" class="page">
+  <div class="container">
+    <div class="section-label">02 / SHOP</div>
+    <div class="section-title">Things your agent can buy</div>
+    <p class="section-sub">Useful digital products. Your agent requests — you approve.</p>
+
+    <div class="track-grid">
+      <div class="track-card">
+        <div class="track-id">[ 01 / DATA ]</div>
+        <div class="product-visual">📈</div>
+        <div class="track-cat">LIVE FEED</div>
+        <h3>Live Price Feed</h3>
+        <p>Real-time crypto prices for one hour. Clean JSON ready for your agent.</p>
+        <div class="price-tag">0.3 NEAR</div>
+        <div class="tags">
+          <span class="tag">DATA</span>
+          <span class="tag">API</span>
+        </div>
+        <div class="card-footer">
+          <a href="#" onclick="requestPurchase('Live Price Feed','0.3')">Agent Buy →</a>
+          <span style="color:#888;">In stock</span>
+        </div>
+      </div>
+
+      <div class="track-card">
+        <div class="track-id">[ 02 / API ]</div>
+        <div class="product-visual">🌤️</div>
+        <div class="track-cat">WEATHER</div>
+        <h3>Weather API Access</h3>
+        <p>7-day forecast for any city. Simple endpoint your agent can call.</p>
+        <div class="price-tag">0.15 NEAR</div>
+        <div class="tags">
+          <span class="tag">API</span>
+          <span class="tag">FORECAST</span>
+        </div>
+        <div class="card-footer">
+          <a href="#" onclick="requestPurchase('Weather API Access','0.15')">Agent Buy →</a>
+          <span style="color:#888;">In stock</span>
+        </div>
+      </div>
+
+      <div class="track-card">
+        <div class="track-id">[ 03 / BRIEF ]</div>
+        <div class="product-visual">📊</div>
+        <div class="track-cat">RESEARCH</div>
+        <h3>Market Summary</h3>
+        <p>AI-generated daily market brief. Short and agent-readable.</p>
+        <div class="price-tag">0.5 NEAR</div>
+        <div class="tags">
+          <span class="tag">SUMMARY</span>
+          <span class="tag">AI</span>
+        </div>
+        <div class="card-footer">
+          <a href="#" onclick="requestPurchase('Market Summary','0.5')">Agent Buy →</a>
+          <span style="color:#888;">In stock</span>
+        </div>
+      </div>
+
+      <div class="track-card">
+        <div class="track-id">[ 04 / CHAIN ]</div>
+        <div class="product-visual">🔍</div>
+        <div class="track-cat">ON-CHAIN</div>
+        <h3>On-chain Research</h3>
+        <p>Wallet activity and flow report. Useful context for decisions.</p>
+        <div class="price-tag">0.8 NEAR</div>
+        <div class="tags">
+          <span class="tag">RESEARCH</span>
+          <span class="tag">NEAR</span>
+        </div>
+        <div class="card-footer">
+          <a href="#" onclick="requestPurchase('On-chain Research','0.8')">Agent Buy →</a>
+          <span style="color:#888;">In stock</span>
+        </div>
+      </div>
+
+      <div class="track-card">
+        <div class="track-id">[ 05 / NEWS ]</div>
+        <div class="product-visual">📰</div>
+        <div class="track-cat">DIGEST</div>
+        <h3>News Digest</h3>
+        <p>Curated crypto news from the last 24 hours.</p>
+        <div class="price-tag">0.2 NEAR</div>
+        <div class="tags">
+          <span class="tag">NEWS</span>
+          <span class="tag">24H</span>
+        </div>
+        <div class="card-footer">
+          <a href="#" onclick="requestPurchase('News Digest','0.2')">Agent Buy →</a>
+          <span style="color:#888;">In stock</span>
+        </div>
+      </div>
+
+      <div class="track-card">
+        <div class="track-id">[ 06 / DATA ]</div>
+        <div class="product-visual">📉</div>
+        <div class="track-cat">DATASET</div>
+        <h3>Historical Dataset</h3>
+        <p>30-day price history as CSV. Ready after approval.</p>
+        <div class="price-tag">0.4 NEAR</div>
+        <div class="tags">
+          <span class="tag">CSV</span>
+          <span class="tag">HISTORY</span>
+        </div>
+        <div class="card-footer">
+          <a href="#" onclick="requestPurchase('Historical Dataset','0.4')">Agent Buy →</a>
+          <span style="color:#888;">In stock</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="dashboard" class="page">
+  <div class="container">
+    <div class="section-label">03 / CONTROL</div>
+    <div class="section-title">Approve the purchase</div>
+    <p class="section-sub">Your agent found something. Review and decide.</p>
+
+    <div class="track-grid">
+      <div class="track-card">
+        <div class="track-id">[ RULES ]</div>
+        <div class="track-cat">YOUR LIMITS</div>
+        <h3>Spending rules</h3>
+        <p>
+          Daily limit: 2 NEAR<br>
+          Ask me above: 0.4 NEAR<br>
+          Shop only
+        </p>
+        <div class="card-footer"><a href="#">Edit rules →</a></div>
+      </div>
+
+      <div class="track-card pending">
+        <div class="track-id">[ PENDING ]</div>
+        <div class="track-cat">AGENT REQUEST</div>
+        <h3 id="pendingTitle">No pending purchase</h3>
+        <div id="pendingDetails" style="display:none;">
+          <div class="product-visual" id="pendingIcon" style="height:70px; font-size:28px; margin:10px 0;">📦</div>
+          <div class="tx-row"><span>Item</span><span id="pItem"></span></div>
+          <div class="tx-row"><span>Price</span><span id="pAmount"></span></div>
+          <div class="actions">
+            <button class="btn-primary" onclick="approve()">Approve</button>
+            <button class="btn-secondary" onclick="deny()">Deny</button>
+          </div>
+        </div>
+        <p id="pendingEmpty">Go to the Shop and let your agent pick something.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function toggleWallet() {
+  const btn = document.getElementById('walletBtn');
+  const connected = btn.textContent !== 'Connect Wallet';
+  btn.textContent = connected ? 'Connect Wallet' : 'demo.near';
+  btn.style.background = connected ? '#111' : '#16a34a';
+}
+function requestPurchase(item, amount) {
+  document.getElementById('pendingTitle').textContent = item;
+  document.getElementById('pItem').textContent = item;
+  document.getElementById('pAmount').textContent = amount + ' NEAR';
+  document.getElementById('pendingDetails').style.display = 'block';
+  document.getElementById('pendingEmpty').style.display = 'none';
+  showPage('dashboard');
+}
+function approve() { alert('Purchase approved (demo)'); deny(); }
+function deny() {
+  document.getElementById('pendingTitle').textContent = 'No pending purchase';
+  document.getElementById('pendingDetails').style.display = 'none';
+  document.getElementById('pendingEmpty').style.display = 'block';
+}
+</script>
+
+</body>
+</html>

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useVoiceLeash } from '../context/VoiceLeashContext';
-import { VOICELEASH_VAULT_ACCOUNT } from '../services/nearWallet';
 import DotMatrixMic from './DotMatrixMic';
 
 export default function LeashControl() {
@@ -10,7 +9,6 @@ export default function LeashControl() {
     pendingRequest,
     approvePending,
     denyPending,
-    reclaimSpentFunds,
     allocateDailyFunds,
     wallet
   } = useVoiceLeash();
@@ -264,27 +262,6 @@ export default function LeashControl() {
               <div>Allowed Method: <span className="font-bold text-[#111111]">propose_purchase()</span></div>
               <div>Transfer Fund Rights: <span className="font-bold text-red-600">ZERO (BLOCKED)</span></div>
             </div>
-          </div>
-
-          {/* 04 / Escrow Vault & Reclaim Funds Card */}
-          <div className="border border-[#D8CFBC] p-4 bg-[#EFE9DC] space-y-3 font-mono text-xs shadow-2xs">
-            <div className="flex items-center justify-between">
-              <span className="text-[#0047FF] font-bold uppercase text-[10px]">[ 04 / TESTNET VAULT & REFUND ]</span>
-              <span className="text-[10px] text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded font-bold">ZERO-LOSS</span>
-            </div>
-            <p className="text-[11px] text-[#555] leading-relaxed">
-              Spent test funds are held in the VoiceLeash Vault. Reclaim them back to your account anytime with 1 click:
-            </p>
-            <div className="text-[10.5px] text-[#666] bg-[#EAE3D4]/60 p-2 border border-[#D8CFBC] break-all font-mono">
-              Vault: <code className="text-[#111111] font-bold">{VOICELEASH_VAULT_ACCOUNT}</code>
-            </div>
-            <button
-              onClick={reclaimSpentFunds}
-              className="w-full py-2.5 bg-[#111111] hover:bg-[#0047FF] text-white font-bold uppercase transition-colors text-xs flex items-center justify-center gap-1.5"
-            >
-              <span>Reclaim Test Funds (Refund to {wallet.accountId || 'Wallet'})</span>
-              <span>↺</span>
-            </button>
           </div>
         </div>
 

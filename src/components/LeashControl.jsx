@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useVoiceLeash } from '../context/VoiceLeashContext';
 import { normalizeSpokenWords, parseNaturalLanguageRules } from '../utils/ruleParser';
 import DotMatrixMic from './DotMatrixMic';
@@ -16,12 +16,14 @@ export default function LeashControl() {
 
   const [inputRule, setInputRule] = useState(policy.rawRuleText);
   const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
+  const silenceTimerRef = useRef(null);
 
   useEffect(() => {
     setInputRule(policy.rawRuleText);
   }, [policy.rawRuleText]);
 
-  // Voice recognition toggle
+  // Voice recognition toggle with continuous listening & live transcription
   const toggleListening = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -30,26 +32,64 @@ export default function LeashControl() {
     }
 
     if (isListening) {
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch(e) {}
+      }
       setIsListening(false);
       return;
     }
 
     try {
       const recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
+      recognitionRef.current = recognition;
+      recognition.continuous = true;
+      recognition.interimResults = true;
       recognition.lang = 'en-US';
 
+      let accumulated = '';
+
       recognition.onstart = () => setIsListening(true);
+
       recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        const normalized = normalizeSpokenWords(transcript);
-        setInputRule(normalized);
-        updateRulesWithText(normalized);
+        let interim = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            accumulated += event.results[i][0].transcript + ' ';
+          } else {
+            interim += event.results[i][0].transcript;
+          }
+        }
+        const full = (accumulated + interim).trim();
+        if (full) {
+          const normalized = normalizeSpokenWords(full);
+          setInputRule(normalized);
+
+          // Reset silence timer on each spoken fragment
+          if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+          silenceTimerRef.current = setTimeout(() => {
+            // After 3 seconds of pause, finalize and apply!
+            try { recognition.stop(); } catch (e) {}
+          }, 3000);
+        }
+      };
+
+      recognition.onerror = () => {
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
         setIsListening(false);
       };
-      recognition.onerror = () => setIsListening(false);
-      recognition.onend = () => setIsListening(false);
+
+      recognition.onend = () => {
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+        setIsListening(false);
+        const finalToApply = accumulated.trim() || inputRule.trim();
+        if (finalToApply) {
+          const normalized = normalizeSpokenWords(finalToApply);
+          setInputRule(normalized);
+          updateRulesWithText(normalized);
+        }
+      };
+
       recognition.start();
     } catch (err) {
       setIsListening(false);

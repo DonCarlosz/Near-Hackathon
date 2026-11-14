@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useVoiceLeash } from '../context/VoiceLeashContext';
 import { MARKETPLACE_PRODUCTS } from '../data/products';
 import DotMatrixIcon from './DotMatrixIcon';
@@ -103,8 +103,10 @@ export default function AgentGoalPanel() {
   const [isListening, setIsListening] = useState(false);
   const [agentLogs, setAgentLogs] = useState([]);
   const [synthesizedResult, setSynthesizedResult] = useState(null);
+  const recognitionRef = useRef(null);
+  const silenceTimerRef = useRef(null);
 
-  // Web Speech API Voice Recognition for Autonomous Agent Goal
+  // Web Speech API Voice Recognition for Autonomous Agent Goal (Continuous & Live Streaming)
   const toggleVoiceInput = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -113,25 +115,61 @@ export default function AgentGoalPanel() {
     }
 
     if (isListening) {
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch(e) {}
+      }
       setIsListening(false);
       return;
     }
 
     try {
       const recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
+      recognitionRef.current = recognition;
+      recognition.continuous = true;
+      recognition.interimResults = true;
       recognition.lang = 'en-US';
 
+      let accumulated = '';
+
       recognition.onstart = () => setIsListening(true);
+
       recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        setGoalText(transcript);
-        setIsListening(false);
-        runAutonomousAgent(transcript);
+        let interim = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            accumulated += event.results[i][0].transcript + ' ';
+          } else {
+            interim += event.results[i][0].transcript;
+          }
+        }
+        const full = (accumulated + interim).trim();
+        if (full) {
+          setGoalText(full);
+
+          // Reset silence timer
+          if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+          silenceTimerRef.current = setTimeout(() => {
+            try { recognition.stop(); } catch (e) {}
+          }, 3000);
+        }
       };
-      recognition.onerror = () => setIsListening(false);
-      recognition.onend = () => setIsListening(false);
+
+      recognition.onerror = () => {
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+        setIsListening(false);
+        const finalGoal = accumulated.trim() || goalText.trim();
+        if (finalGoal) {
+          setGoalText(finalGoal);
+          runAutonomousAgent(finalGoal);
+        }
+      };
+
       recognition.start();
     } catch (err) {
       setIsListening(false);

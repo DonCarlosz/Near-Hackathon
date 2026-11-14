@@ -191,21 +191,29 @@ export default function LeashControl() {
 
             {/* Live Parameter Extraction Status */}
             {inputRule.trim() && (
-              <div className="flex flex-wrap items-center gap-2 pt-1 font-mono text-[10.5px]">
-                <span className="text-[#777] uppercase text-[10px]">Detected Parameters:</span>
-                <span className={`px-2 py-0.5 border font-bold ${
+              <div className="flex flex-wrap items-center gap-2 pt-1 font-mono text-xs">
+                <span className="text-[#888] uppercase text-[10px] tracking-wider">[ PARSED RULES ]:</span>
+                
+                <span className={`px-2.5 py-1 border transition-colors ${
                   liveParse.dailyLimit !== null
-                    ? 'border-emerald-600 bg-emerald-50 text-emerald-900'
-                    : 'border-amber-600 bg-amber-50 text-amber-900'
+                    ? 'border-[#D8CFBC] bg-[#EAE3D4]/60 text-[#111111]'
+                    : 'border-dashed border-[#C8BEAA] bg-[#EAE3D4]/20 text-[#888]'
                 }`}>
-                  {liveParse.dailyLimit !== null ? `Daily Budget: ${liveParse.dailyLimit} Ⓝ ✓` : 'Daily Budget: ⚠️ Missing'}
+                  <span className="text-[10px] text-[#777] uppercase mr-1.5">DAILY BUDGET:</span>
+                  <span className={liveParse.dailyLimit !== null ? 'font-bold text-[#0047FF]' : 'font-bold text-[#888]'}>
+                    {liveParse.dailyLimit !== null ? `${liveParse.dailyLimit} Ⓝ` : 'MISSING (e.g. 2 NEAR)'}
+                  </span>
                 </span>
-                <span className={`px-2 py-0.5 border font-bold ${
+
+                <span className={`px-2.5 py-1 border transition-colors ${
                   liveParse.requireApprovalAbove !== null
-                    ? 'border-emerald-600 bg-emerald-50 text-emerald-900'
-                    : 'border-amber-600 bg-amber-50 text-amber-900'
+                    ? 'border-[#D8CFBC] bg-[#EAE3D4]/60 text-[#111111]'
+                    : 'border-dashed border-[#C8BEAA] bg-[#EAE3D4]/20 text-[#888]'
                 }`}>
-                  {liveParse.requireApprovalAbove !== null ? `Confirm Above: ${liveParse.requireApprovalAbove} Ⓝ ✓` : 'Threshold: ⚠️ Missing'}
+                  <span className="text-[10px] text-[#777] uppercase mr-1.5">CONFIRM ABOVE:</span>
+                  <span className={liveParse.requireApprovalAbove !== null ? 'font-bold text-[#0047FF]' : 'font-bold text-[#888]'}>
+                    {liveParse.requireApprovalAbove !== null ? `${liveParse.requireApprovalAbove} Ⓝ` : 'MISSING (e.g. 0.25 NEAR)'}
+                  </span>
                 </span>
               </div>
             )}

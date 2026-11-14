@@ -9,6 +9,9 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    host: true
+    host: true,
+    watch: {
+      ignored: ['**/Post Artifacts/**', '**/*.mp4', '**/*.mp3']
+    }
   }
 });

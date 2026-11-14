@@ -26,3 +26,9 @@ dist-ssr
 # Vite cache
 .vite
 .vite-temp
+
+# Internal Planning and Hackathon Post Artifacts
+Plan/
+Post Artifacts/
+*.mp4
+*.mp3

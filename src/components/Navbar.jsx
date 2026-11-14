@@ -112,32 +112,11 @@ export default function Navbar() {
           </button>
         </nav>
 
-        {/* Right: User Wallet + Agent Balance Pill with Reclaim Option */}
+        {/* Right: Agent Balance Pill on the LEFT, User Wallet Pill on the RIGHT */}
         <div className="flex items-center gap-2.5 sm:gap-3">
           {wallet.isConnected ? (
             <>
-              {/* 1. User Personal Wallet Pill */}
-              <div className="flex items-center gap-2 border border-[#D8CFBC] bg-[#EAE3D4]/50 px-3 py-1.5 font-mono text-xs shadow-2xs">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <button 
-                  onClick={openWalletModal}
-                  className="font-bold text-[#111111] hover:text-[#0047FF] transition-colors"
-                  title="View wallet details"
-                >
-                  <span className="hidden sm:inline">{wallet.accountId}</span>
-                  <span className="sm:hidden">{wallet.accountId.split('.')[0]}</span>
-                </button>
-                <span className="text-[#111111] font-extrabold">({wallet.balance} Ⓝ)</span>
-                <button 
-                  onClick={disconnectWallet}
-                  className="ml-1 text-[10px] text-red-600 hover:underline uppercase font-bold"
-                  title="Disconnect wallet"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* 2. Agent Escrow Holding Pill (Clickable Dropdown to Claim Funds Back) */}
+              {/* 1. Agent Escrow Holding Pill (On the LEFT) */}
               <div className="relative" ref={dropdownRef}>
                 <button 
                   onClick={() => setIsAgentMenuOpen(!isAgentMenuOpen)}
@@ -160,7 +139,7 @@ export default function Navbar() {
 
                 {/* Dropdown Card */}
                 {isAgentMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-80 sm:w-96 border border-[#D8CFBC] bg-[#EFE9DC] shadow-xl p-5 z-50 font-mono text-xs space-y-4 animate-in fade-in slide-in-from-top-2">
+                  <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-80 sm:w-96 border border-[#D8CFBC] bg-[#EFE9DC] shadow-xl p-5 z-50 font-mono text-xs space-y-4 animate-in fade-in slide-in-from-top-2">
                     <div className="flex items-center justify-between border-b border-[#D8CFBC] pb-3">
                       <div>
                         <div className="text-[10px] text-[#0047FF] font-bold tracking-wider uppercase">
@@ -229,6 +208,27 @@ export default function Navbar() {
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* 2. User Personal Wallet Pill (On the RIGHT) */}
+              <div className="flex items-center gap-2 border border-[#D8CFBC] bg-[#EAE3D4]/50 px-3 py-1.5 font-mono text-xs shadow-2xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <button 
+                  onClick={openWalletModal}
+                  className="font-bold text-[#111111] hover:text-[#0047FF] transition-colors"
+                  title="View wallet details"
+                >
+                  <span className="hidden sm:inline">{wallet.accountId}</span>
+                  <span className="sm:hidden">{wallet.accountId.split('.')[0]}</span>
+                </button>
+                <span className="text-[#111111] font-extrabold">({wallet.balance} Ⓝ)</span>
+                <button 
+                  onClick={disconnectWallet}
+                  className="ml-1 text-[10px] text-red-600 hover:underline uppercase font-bold"
+                  title="Disconnect wallet"
+                >
+                  ✕
+                </button>
               </div>
             </>
           ) : (

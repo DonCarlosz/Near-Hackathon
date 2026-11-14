@@ -266,12 +266,12 @@ export function VoiceLeashProvider({ children }) {
     if (!wallet.isConnected) {
       showNotification('Please connect your NEAR testnet wallet first', 'error');
       openWalletModal();
-      return;
+      return { success: false, error: 'wallet_not_connected' };
     }
 
     if (policy.spentToday + product.price > policy.dailyLimit) {
       showNotification(`Purchase blocked: ${product.name} (${product.price} NEAR) exceeds remaining daily budget (${(policy.dailyLimit - policy.spentToday).toFixed(2)} NEAR)`, 'error');
-      return;
+      return { success: false, error: 'exceeds_daily_limit' };
     }
 
     const requiresApproval = product.price > policy.requireApprovalAbove;
@@ -286,8 +286,14 @@ export function VoiceLeashProvider({ children }) {
       });
       showNotification(`Agent proposed ${product.name} (${product.price} Ⓝ) — Human approval required!`, 'warning');
       setActiveTab('control');
+      return { success: false, pending: true };
     } else {
-      // Under leash threshold -> auto-approved path: executes immediately with ZERO wallet pop-up!
+      // Under leash threshold -> auto-approved path: requires sufficient unspent agent balance!
+      if (agentBalance < product.price) {
+        showNotification(`Autonomous purchase blocked: Insufficient agent balance (${agentBalance} Ⓝ). Deposit funds to the agent vault first.`, 'error');
+        return { success: false, error: 'insufficient_agent_balance' };
+      }
+
       return await executePurchase(product, 'Leash (Auto-approved under 0.25 Ⓝ threshold)');
     }
   };

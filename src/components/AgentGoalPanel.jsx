@@ -97,7 +97,7 @@ export function resolveProductsFromGoal(goal) {
 }
 
 export default function AgentGoalPanel() {
-  const { wallet, policy, requestAgentPurchase, showNotification, setActiveTab } = useVoiceLeash();
+  const { wallet, policy, agentBalance, requestAgentPurchase, showNotification, setActiveTab } = useVoiceLeash();
   const [goalText, setGoalText] = useState('');
   const [isRunning, setIsRunning] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -238,8 +238,21 @@ export default function AgentGoalPanel() {
       await new Promise(r => setTimeout(r, 600));
 
       if (prod.price <= policy.requireApprovalAbove) {
+        if (agentBalance < prod.price) {
+          addLog(`[BLOCKED] Insufficient unspent agent balance (${agentBalance} Ⓝ). Required: ${prod.price} Ⓝ.`, 'warning');
+          addLog(`Execution halted: Please deposit an allowance to your agent vault first.`, 'warning');
+          showNotification(`Agent halted: Insufficient agent balance (${agentBalance} Ⓝ). Deposit allowance first.`, 'error');
+          setIsRunning(false);
+          return;
+        }
+
         addLog(`[PASS] Price ${prod.price} Ⓝ ≤ Auto-approval cap ${policy.requireApprovalAbove} Ⓝ. Broadcasting on-chain via Agent Vault (zero wallet pop-up)...`, 'success');
         const res = await requestAgentPurchase(prod);
+        if (res && res.error) {
+          addLog(`[PURCHASE HALTED] ${res.error}`, 'warning');
+          setIsRunning(false);
+          return;
+        }
         acquiredDeliverables.push(prod);
         if (res && res.txHash && !res.txHash.startsWith('auton-')) {
           addLog(`✓ Confirmed on NEAR Testnet! Tx: ${res.txHash.slice(0, 14)}...`, 'success');

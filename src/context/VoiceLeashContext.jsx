@@ -76,6 +76,19 @@ export function VoiceLeashProvider({ children }) {
     };
   });
 
+  // Allocated Budget Held by Agent in Escrow Vault (Defaults to 1.0 NEAR daily allowance)
+  const [allocatedBudget, setAllocatedBudget] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const account = localStorage.getItem('voiceleash_wallet_account') || 'default';
+      const saved = localStorage.getItem(`voiceleash_allocated_budget_${account}`);
+      if (saved !== null) return parseFloat(saved);
+    }
+    return 1.0;
+  });
+
+  // Dynamic Agent Balance = Allocated Budget - Spent Today
+  const agentBalance = Math.max(0, +(allocatedBudget - policy.spentToday).toFixed(2));
+
   // Pending Purchase Modal/Drawer
   const [pendingRequest, setPendingRequest] = useState(null);
 
@@ -144,6 +157,14 @@ export function VoiceLeashProvider({ children }) {
           }));
         }
 
+        // Load persisted agent allocated budget
+        const savedAlloc = localStorage.getItem(`voiceleash_allocated_budget_${res.accountId}`);
+        if (savedAlloc !== null) {
+          setAllocatedBudget(parseFloat(savedAlloc));
+        } else {
+          setAllocatedBudget(1.0);
+        }
+
         showNotification(`Connected to ${res.accountId} (${effectiveBal} Ⓝ)`, 'success');
         return true;
       } else {
@@ -186,6 +207,13 @@ export function VoiceLeashProvider({ children }) {
       localStorage.setItem(`voiceleash_spent_today_${wallet.accountId}`, policy.spentToday.toString());
     }
   }, [policy.spentToday, wallet.accountId]);
+
+  // Save allocatedBudget
+  useEffect(() => {
+    if (wallet.accountId) {
+      localStorage.setItem(`voiceleash_allocated_budget_${wallet.accountId}`, allocatedBudget.toString());
+    }
+  }, [allocatedBudget, wallet.accountId]);
 
   // Disconnect or Open Modal
   const openWalletModal = () => setIsWalletModalOpen(true);
@@ -378,6 +406,7 @@ export function VoiceLeashProvider({ children }) {
     });
 
     if (outcome.success) {
+      setAllocatedBudget(prev => +(prev + amountNear).toFixed(2));
       showNotification(`Successfully allocated ${amountNear} Ⓝ to VoiceLeash Vault on-chain! Tx: ${outcome.txHash.slice(0, 8)}...`, 'success');
       
       const allocTx = {
@@ -413,16 +442,18 @@ export function VoiceLeashProvider({ children }) {
   };
 
   // Reclaim all spent/allocated testnet funds back from Vault to user!
-  const reclaimSpentFunds = async () => {
+  const reclaimSpentFunds = async (customAmount = null) => {
     if (!wallet.isConnected || !wallet.accountId) {
       showNotification('Connect your wallet first to reclaim funds.', 'error');
-      return;
+      return { success: false };
     }
 
-    showNotification('Signing vault refund transaction on NEAR Testnet...', 'info');
+    const unspentHolding = agentBalance > 0 ? agentBalance : (policy.spentToday > 0 ? policy.spentToday : 1.0);
+    const amountToReclaim = customAmount || unspentHolding;
+
+    showNotification(`Signing vault refund transaction (${amountToReclaim} Ⓝ) on NEAR Testnet...`, 'info');
 
     try {
-      const amountToReclaim = policy.spentToday > 0 ? policy.spentToday : 0.5;
       const res = await refundVaultFundsTo(wallet.accountId, amountToReclaim);
       const refundedNum = typeof res.refundedAmount === 'number' ? res.refundedAmount : parseFloat(res.refundedAmount);
       
@@ -431,14 +462,16 @@ export function VoiceLeashProvider({ children }) {
       setWallet(prev => ({ ...prev, balance: updatedBalance }));
       localStorage.setItem('voiceleash_wallet_balance', updatedBalance.toString());
 
-      // 2. Reset spent today & clear stored local spent
+      // 2. Reset allocated budget and spent today
+      setAllocatedBudget(0);
+      localStorage.setItem(`voiceleash_allocated_budget_${wallet.accountId}`, '0');
       setPolicy(prev => ({ ...prev, spentToday: 0 }));
       localStorage.removeItem(`voiceleash_spent_today_${wallet.accountId}`);
 
       // 3. Add settlement transaction record to audit history
       const refundTx = {
         id: `refund-${Date.now().toString().slice(-4)}`,
-        productName: `Vault Refund to ${wallet.accountId}`,
+        productName: `Agent Escrow Refund to ${wallet.accountId}`,
         price: refundedNum,
         status: 'REFUNDED',
         approvedBy: 'Escrow Vault (1-Click Reclaim)',
@@ -469,9 +502,11 @@ export function VoiceLeashProvider({ children }) {
         confetti({ particleCount: 70, spread: 80, origin: { y: 0.7 } });
       } catch (e) {}
 
-      showNotification(`✓ Reclaimed ${refundedNum} NEAR back to ${wallet.accountId}! Tx: ${res.txHash?.slice(0, 10)}...`, 'success');
+      showNotification(`✓ Successfully reclaimed ${refundedNum} NEAR back to ${wallet.accountId}! Tx: ${res.txHash?.slice(0, 10)}...`, 'success');
+      return { success: true, txHash: res.txHash };
     } catch (err) {
       showNotification(`Refund notice: ${err.message}`, 'error');
+      return { success: false, error: err.message };
     }
   };
 
@@ -505,6 +540,9 @@ export function VoiceLeashProvider({ children }) {
         approvePending,
         denyPending,
         history,
+        allocatedBudget,
+        setAllocatedBudget,
+        agentBalance,
         reclaimSpentFunds,
         allocateDailyFunds,
         activeTab,

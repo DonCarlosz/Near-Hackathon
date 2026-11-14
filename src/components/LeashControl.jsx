@@ -224,11 +224,11 @@ export default function LeashControl() {
             <div className="flex items-center justify-between">
               <span className="text-[#888] uppercase text-[10px]">DAILY BUDGET ENFORCED</span>
               <button
-                onClick={() => allocateDailyFunds(1.0)}
+                onClick={() => allocateDailyFunds(policy?.dailyLimit ? Number(policy.dailyLimit) : 1.0)}
                 className="text-[10px] text-[#0047FF] hover:underline font-bold uppercase"
-                title="Deposit 1.0 NEAR daily allocation on-chain"
+                title={`Deposit ${policy?.dailyLimit || 1.0} NEAR daily allocation on-chain`}
               >
-                Deposit 1.0 Ⓝ On-Chain ↗
+                Deposit {policy?.dailyLimit || 1.0} Ⓝ On-Chain ↗
               </button>
             </div>
             <div className="text-3xl font-extrabold text-[#111111]">
@@ -242,7 +242,7 @@ export default function LeashControl() {
             </div>
             <div className="text-[10px] text-[#777] pt-1 flex items-center justify-between">
               <span>Remaining: {(policy.dailyLimit - policy.spentToday).toFixed(2)} NEAR</span>
-              <span className="text-[#555]">Capped at 1.0 Ⓝ</span>
+              <span className="text-[#555]">Capped at {policy.dailyLimit} Ⓝ</span>
             </div>
           </div>
 

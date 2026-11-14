@@ -391,7 +391,8 @@ export function VoiceLeashProvider({ children }) {
   };
 
   // Allocate Daily Budget On-Chain (Funds Allocation via Meteor)
-  const allocateDailyFunds = async (amountNear = 1.0) => {
+  const allocateDailyFunds = async (customAmount = null) => {
+    const amountNear = customAmount !== null ? customAmount : (policy?.dailyLimit ? Number(policy.dailyLimit) : 1.0);
     if (!wallet.isConnected || !wallet.accountId) {
       showNotification('Please connect your NEAR wallet first.', 'error');
       openWalletModal();

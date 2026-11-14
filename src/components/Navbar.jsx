@@ -171,37 +171,55 @@ export default function Navbar() {
                       These funds are securely held in your agent's escrow vault (<code className="text-[#111111] font-bold text-[10px]">{VOICELEASH_VAULT_ACCOUNT.slice(0, 18)}...</code>) for autonomous micro-purchases. If unspent, you have full control to claim them back to your wallet at any time.
                     </p>
 
-                    {/* Action Button: Claim Back to Wallet */}
+                    {/* Action Button: Claim Back to Wallet OR Deposit to Vault */}
                     <div className="space-y-2 pt-1">
                       {agentBalance > 0 ? (
-                        <button
-                          onClick={async () => {
-                            setIsClaiming(true);
-                            await reclaimSpentFunds(agentBalance);
-                            setIsClaiming(false);
-                            setIsAgentMenuOpen(false);
-                          }}
-                          disabled={isClaiming}
-                          className="w-full py-2.5 bg-[#111111] hover:bg-[#0047FF] text-white font-bold uppercase transition-colors text-xs flex items-center justify-center gap-2 shadow-2xs disabled:opacity-50 cursor-pointer"
-                        >
-                          {isClaiming ? (
-                            <span>Refunding On-Chain...</span>
-                          ) : (
-                            <>
-                              <span>Claim Back to Wallet ({agentBalance} Ⓝ)</span>
-                              <span>↺</span>
-                            </>
+                        <>
+                          <button
+                            onClick={async () => {
+                              setIsClaiming(true);
+                              await reclaimSpentFunds(agentBalance);
+                              setIsClaiming(false);
+                              setIsAgentMenuOpen(false);
+                            }}
+                            disabled={isClaiming}
+                            className="w-full py-2.5 bg-[#111111] hover:bg-[#0047FF] text-white font-bold uppercase transition-colors text-xs flex items-center justify-center gap-2 shadow-2xs disabled:opacity-50 cursor-pointer"
+                          >
+                            {isClaiming ? (
+                              <span>Refunding On-Chain...</span>
+                            ) : (
+                              <>
+                                <span>Claim Back to Wallet ({agentBalance} Ⓝ)</span>
+                                <span>↺</span>
+                              </>
+                            )}
+                          </button>
+
+                          {/* Top Up button if current balance is below daily limit */}
+                          {agentBalance < (policy?.dailyLimit || 1.0) && (
+                            <button
+                              onClick={async () => {
+                                const diff = +((policy?.dailyLimit || 1.0) - agentBalance).toFixed(2);
+                                await allocateDailyFunds(diff);
+                                setIsAgentMenuOpen(false);
+                              }}
+                              className="w-full py-2 bg-[#EAE3D4] hover:bg-[#D8CFBC] text-[#0047FF] font-bold uppercase transition-colors text-xs flex items-center justify-center gap-1.5 border border-[#D8CFBC] cursor-pointer"
+                            >
+                              <span>Top Up +{+((policy?.dailyLimit || 1.0) - agentBalance).toFixed(2)} Ⓝ (Daily Cap {policy?.dailyLimit || 1.0} Ⓝ)</span>
+                              <span>↗</span>
+                            </button>
                           )}
-                        </button>
+                        </>
                       ) : (
                         <button
                           onClick={async () => {
-                            await allocateDailyFunds(1.0);
+                            const depositAmt = policy?.dailyLimit ? Number(policy.dailyLimit) : 1.0;
+                            await allocateDailyFunds(depositAmt);
                             setIsAgentMenuOpen(false);
                           }}
                           className="w-full py-2.5 bg-[#0047FF] hover:bg-[#003CD6] text-white font-bold uppercase transition-colors text-xs flex items-center justify-center gap-2 shadow-2xs cursor-pointer"
                         >
-                          <span>Deposit 1.0 Ⓝ to Agent Vault</span>
+                          <span>Deposit {policy?.dailyLimit || 1.0} Ⓝ to Agent Vault</span>
                           <span>↗</span>
                         </button>
                       )}

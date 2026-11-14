@@ -100,7 +100,7 @@ Open `http://localhost:5173` in your browser.
 ### 2. Step-by-Step Verification Flow
 
 #### Step 1: Connect Wallet
-* **Do X:** Click **Connect Wallet** in the top navigation bar. Enter the testnet account `d4rc.testnet` (or authenticate via Meteor Wallet).
+* **Do X:** Click **Connect Wallet** in the top navigation bar. Enter your testnet account `username.testnet` and authenticate via Meteor Wallet.
 * **See Y:** The navigation bar updates immediately, displaying the account ID and querying live testnet funds from the NEAR RPC.
 
 #### Step 2: Define Spending Leash
@@ -170,7 +170,7 @@ Open `http://localhost:5173` in your browser.
 
 * **Escrow Vault Signer:** `voiceleash-vault-3421.testnet`
 * **Marketplace Settlement Receiver:** `voiceleash-market.testnet`
-* **Demo Personal Wallet:** `d4rc.testnet`
+* **User Wallet:** Any NEAR Testnet account (e.g. `username.testnet`)
 * **Network:** NEAR Testnet
 
 ---

@@ -9,13 +9,13 @@
   ],
   "payout_account": "d4rc.testnet",
   "demo_steps": [
-    "1. Connect NEAR testnet wallet (Meteor Wallet or direct RPC lookup)",
-    "2. Deposit daily 1.0 NEAR budget on-chain -> Enables autonomous shopping with ZERO wallet pop-ups",
-    "3. Set spending rules in plain language (e.g., 'Spend up to 1 NEAR daily, ask above 0.25')",
-    "4. Type a goal or run 'Weather Radar' (0.15 NEAR) -> Autonomous purchase succeeds with 0 wallet pop-ups",
-    "5. Buy a high-cost capability (e.g. Market Summary 0.5 NEAR) -> Intercepted for 1-tap human approval",
-    "6. Inspect deliverables in Audit Trail and 1-click export to JSON / CSV",
-    "7. Click 'Reclaim Test Funds' in Leash Rules -> Escrow Vault refunds 100% of test funds back to your wallet"
+    "1. Connect NEAR testnet wallet with Meteor Wallet (e.g. username.testnet)",
+    "2. Set spending rules in plain language (e.g., 'Spend up to 2 NEAR daily, but ask for confirmation before buying anything over 0.25 NEAR')",
+    "3. Deposit daily budget to agent vault on-chain -> Enables autonomous shopping with zero wallet popups",
+    "4. Dictate a goal or run 'Weather Radar' (0.15 NEAR) -> Autonomous purchase succeeds with zero wallet popups",
+    "5. Buy a high-value capability (e.g. Market Summary 0.5 NEAR) -> Intercepted for 1-tap human approval",
+    "6. Inspect deliverables in Audit Trail and export to JSON or CSV",
+    "7. Click 'Claim Back to Wallet' in agent balance dropdown -> Escrow Vault refunds unspent funds on-chain"
   ],
   "contracts": [
     {

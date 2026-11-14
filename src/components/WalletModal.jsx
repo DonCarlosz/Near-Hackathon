@@ -103,14 +103,14 @@ export default function WalletModal({ isOpen, onClose }) {
           <div className="space-y-2.5">
             <div className="text-[10px] text-[#777] uppercase font-bold">[ 02 / CONNECT BY TESTNET ID ]</div>
             <p className="text-[10.5px] text-[#666]">
-              Enter your testnet account (e.g. <code>d4rc.testnet</code>). We query the official Testnet RPC and Fastnear RPC directly.
+              Enter your testnet account (e.g. <code>username.testnet</code>). We query the official Testnet RPC and Fastnear RPC directly.
             </p>
             <form onSubmit={handleVerifyAndConnect} className="space-y-2.5">
               <input
                 type="text"
                 value={customAccountId}
                 onChange={(e) => setCustomAccountId(e.target.value)}
-                placeholder="e.g. d4rc.testnet"
+                placeholder="e.g. username.testnet"
                 className="w-full p-2.5 bg-[#FAF7F0] border border-[#D8CFBC] text-xs font-mono focus:outline-none focus:border-[#0047FF]"
               />
 

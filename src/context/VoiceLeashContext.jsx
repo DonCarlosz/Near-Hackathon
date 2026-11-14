@@ -236,22 +236,29 @@ export function VoiceLeashProvider({ children }) {
   // Update Plain-Language Rules & Persist to Storage
   const updateRulesWithText = (text) => {
     const parsed = parseNaturalLanguageRules(text);
-    if (!parsed) return;
+    if (!parsed) return { success: false, error: 'Empty rule' };
 
+    if (!parsed.isValid) {
+      showNotification(`⚠️ ${parsed.error}`, 'error');
+      return { success: false, error: parsed.error, missingParams: parsed.missingParams };
+    }
+
+    const textToSave = parsed.normalizedText || text;
     const account = wallet.accountId || 'default';
     localStorage.setItem(`voiceleash_policy_limit_${account}`, parsed.dailyLimit.toString());
     localStorage.setItem(`voiceleash_policy_threshold_${account}`, parsed.requireApprovalAbove.toString());
-    localStorage.setItem(`voiceleash_policy_text_${account}`, text);
+    localStorage.setItem(`voiceleash_policy_text_${account}`, textToSave);
 
     setPolicy(prev => ({
       ...prev,
       dailyLimit: parsed.dailyLimit,
       requireApprovalAbove: parsed.requireApprovalAbove,
       allowedCategories: parsed.allowedCategories,
-      rawRuleText: text
+      rawRuleText: textToSave
     }));
 
-    showNotification(`Rules updated: Daily limit ${parsed.dailyLimit} NEAR, Ask above ${parsed.requireApprovalAbove} NEAR`, 'success');
+    showNotification(`✓ Rules updated: Daily limit ${parsed.dailyLimit} NEAR, Confirm over ${parsed.requireApprovalAbove} NEAR`, 'success');
+    return { success: true, parsed };
   };
 
   // Agent requests a purchase from the marketplace

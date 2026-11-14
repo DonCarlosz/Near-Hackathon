@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useVoiceLeash } from '../context/VoiceLeashContext';
+import { normalizeSpokenWords, parseNaturalLanguageRules } from '../utils/ruleParser';
 import DotMatrixMic from './DotMatrixMic';
 
 export default function LeashControl() {
@@ -42,8 +43,9 @@ export default function LeashControl() {
       recognition.onstart = () => setIsListening(true);
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
-        setInputRule(transcript);
-        updateRulesWithText(transcript);
+        const normalized = normalizeSpokenWords(transcript);
+        setInputRule(normalized);
+        updateRulesWithText(normalized);
         setIsListening(false);
       };
       recognition.onerror = () => setIsListening(false);
@@ -57,9 +59,16 @@ export default function LeashControl() {
   const handleApply = (e) => {
     e.preventDefault();
     if (inputRule.trim()) {
-      updateRulesWithText(inputRule.trim());
+      const normalized = normalizeSpokenWords(inputRule.trim());
+      setInputRule(normalized);
+      updateRulesWithText(normalized);
     }
   };
+
+  // Live validation of current input text
+  const liveParse = useMemo(() => {
+    return parseNaturalLanguageRules(inputRule);
+  }, [inputRule]);
 
   const presets = [
     {
@@ -179,6 +188,28 @@ export default function LeashControl() {
               placeholder="e.g. You can spend up to 2 NEAR a day on data, but ask me for anything over 0.4."
               className="w-full p-3 font-mono text-xs border border-[#D8CFBC] bg-[#FAF7F0] focus:outline-none focus:border-[#0047FF] resize-none"
             />
+
+            {/* Live Parameter Extraction Status */}
+            {inputRule.trim() && (
+              <div className="flex flex-wrap items-center gap-2 pt-1 font-mono text-[10.5px]">
+                <span className="text-[#777] uppercase text-[10px]">Detected Parameters:</span>
+                <span className={`px-2 py-0.5 border font-bold ${
+                  liveParse.dailyLimit !== null
+                    ? 'border-emerald-600 bg-emerald-50 text-emerald-900'
+                    : 'border-amber-600 bg-amber-50 text-amber-900'
+                }`}>
+                  {liveParse.dailyLimit !== null ? `Daily Budget: ${liveParse.dailyLimit} Ⓝ ✓` : 'Daily Budget: ⚠️ Missing'}
+                </span>
+                <span className={`px-2 py-0.5 border font-bold ${
+                  liveParse.requireApprovalAbove !== null
+                    ? 'border-emerald-600 bg-emerald-50 text-emerald-900'
+                    : 'border-amber-600 bg-amber-50 text-amber-900'
+                }`}>
+                  {liveParse.requireApprovalAbove !== null ? `Confirm Above: ${liveParse.requireApprovalAbove} Ⓝ ✓` : 'Threshold: ⚠️ Missing'}
+                </span>
+              </div>
+            )}
+
             <div className="flex items-center justify-between">
               <span className="font-mono text-[10px] text-[#777]">
                 Parses automatically into NEAR smart contract policy

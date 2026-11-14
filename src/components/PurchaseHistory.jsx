@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useVoiceLeash } from '../context/VoiceLeashContext';
 
 export default function PurchaseHistory() {
-  const { history } = useVoiceLeash();
+  const { history, wallet, openWalletModal } = useVoiceLeash();
   const [selectedDeliverable, setSelectedDeliverable] = useState(null);
 
   const downloadFile = (deliverable, filename, type) => {
@@ -45,7 +45,21 @@ export default function PurchaseHistory() {
         </p>
       </div>
 
-      {history.length === 0 ? (
+      {!wallet.isConnected ? (
+        <div className="border border-[#D8CFBC] p-12 text-center bg-[#EFE9DC] font-mono text-xs space-y-4">
+          <div className="text-[#777] uppercase tracking-wider">[ WALLET NOT CONNECTED ]</div>
+          <p className="text-[#555] max-w-md mx-auto leading-relaxed">
+            Connect your NEAR wallet to view and export your account's verifiable on-chain audit trail and purchased deliverables.
+          </p>
+          <button
+            onClick={openWalletModal}
+            className="px-6 py-2.5 bg-[#0047FF] hover:bg-[#003CD6] text-white font-bold uppercase transition-colors text-xs inline-flex items-center gap-1.5 shadow-2xs"
+          >
+            <span>Connect Wallet</span>
+            <span>↗</span>
+          </button>
+        </div>
+      ) : history.length === 0 ? (
         <div className="border border-[#D8CFBC] p-12 text-center bg-[#EFE9DC] font-mono text-xs text-[#777]">
           [ NO PURCHASES RECORDED YET. GO TO SHOP TO INITIATE AN AGENT RUN. ]
         </div>

@@ -97,7 +97,7 @@ export function resolveProductsFromGoal(goal) {
 }
 
 export default function AgentGoalPanel() {
-  const { wallet, policy, agentBalance, requestAgentPurchase, showNotification, setActiveTab } = useVoiceLeash();
+  const { wallet, policy, agentBalance, requestAgentPurchase, showNotification, setActiveTab, openWalletModal } = useVoiceLeash();
   const [goalText, setGoalText] = useState('');
   const [isRunning, setIsRunning] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -201,7 +201,8 @@ export default function AgentGoalPanel() {
 
   const runAutonomousAgent = async (targetGoal, explicitProductIds = null) => {
     if (!wallet.isConnected) {
-      showNotification('Please connect your NEAR testnet wallet first', 'error');
+      showNotification('Please connect your NEAR testnet wallet first to run the agent.', 'error');
+      openWalletModal();
       return;
     }
 
@@ -358,6 +359,11 @@ export default function AgentGoalPanel() {
               key={preset.label}
               onClick={() => {
                 setGoalText(preset.goal);
+                if (!wallet.isConnected) {
+                  showNotification('Connect your NEAR wallet to launch the autonomous agent.', 'info');
+                  openWalletModal();
+                  return;
+                }
                 runAutonomousAgent(preset.goal, preset.neededProductIds);
               }}
               disabled={isRunning}

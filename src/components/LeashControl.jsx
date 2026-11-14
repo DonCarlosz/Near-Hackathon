@@ -11,7 +11,9 @@ export default function LeashControl() {
     approvePending,
     denyPending,
     allocateDailyFunds,
-    wallet
+    wallet,
+    openWalletModal,
+    showNotification
   } = useVoiceLeash();
 
   const [inputRule, setInputRule] = useState(policy.rawRuleText);
@@ -86,6 +88,11 @@ export default function LeashControl() {
         if (finalToApply) {
           const normalized = normalizeSpokenWords(finalToApply);
           setInputRule(normalized);
+          if (!wallet.isConnected) {
+            showNotification('Rule transcribed! Connect your NEAR wallet to apply it on-chain.', 'info');
+            openWalletModal();
+            return;
+          }
           updateRulesWithText(normalized);
         }
       };
@@ -98,6 +105,11 @@ export default function LeashControl() {
 
   const handleApply = (e) => {
     e.preventDefault();
+    if (!wallet.isConnected) {
+      showNotification('Please connect your NEAR wallet first to apply rules on-chain.', 'error');
+      openWalletModal();
+      return;
+    }
     if (inputRule.trim()) {
       const normalized = normalizeSpokenWords(inputRule.trim());
       setInputRule(normalized);
@@ -280,6 +292,11 @@ export default function LeashControl() {
                   key={p.label}
                   onClick={() => {
                     setInputRule(p.text);
+                    if (!wallet.isConnected) {
+                      showNotification('Connect your NEAR wallet to apply this policy preset.', 'info');
+                      openWalletModal();
+                      return;
+                    }
                     updateRulesWithText(p.text);
                   }}
                   className="w-full text-left p-2.5 border border-[#D8CFBC] hover:border-[#0047FF] hover:bg-[#EAE3D4] transition-colors font-mono text-xs"
@@ -303,7 +320,14 @@ export default function LeashControl() {
             <div className="flex items-center justify-between">
               <span className="text-[#888] uppercase text-[10px]">DAILY BUDGET ENFORCED</span>
               <button
-                onClick={() => allocateDailyFunds(policy?.dailyLimit ? Number(policy.dailyLimit) : 1.0)}
+                onClick={() => {
+                  if (!wallet.isConnected) {
+                    showNotification('Please connect your NEAR wallet to deposit daily allowance.', 'error');
+                    openWalletModal();
+                    return;
+                  }
+                  allocateDailyFunds(policy?.dailyLimit ? Number(policy.dailyLimit) : 1.0);
+                }}
                 className="text-[10px] text-[#0047FF] hover:underline font-bold uppercase"
                 title={`Deposit ${policy?.dailyLimit || 1.0} NEAR daily allocation on-chain`}
               >
